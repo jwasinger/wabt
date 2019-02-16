@@ -22,6 +22,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <iostream>
 
 #include "src/binary-reader.h"
 #include "src/cast.h"
@@ -39,6 +41,8 @@
 
 using namespace wabt;
 using namespace wabt::interp;
+
+using chrono_clock = std::chrono::high_resolution_clock;
 
 static int s_verbose;
 static const char* s_infile;
@@ -185,20 +189,36 @@ static void InitEnvironment(Environment* env) {
 }
 
 static wabt::Result ReadAndRunModule(const char* module_filename) {
+  constexpr auto to_us = [](chrono_clock::duration d) {
+		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+	};
+
   wabt::Result result;
   Environment env;
   InitEnvironment(&env);
 
   Errors errors;
   DefinedModule* module = nullptr;
+
+  const auto parseStartTime = chrono_clock::now();
+
   result = ReadModule(module_filename, &env, &errors, &module);
   FormatErrorsToFile(errors, Location::Type::Binary);
+
+  const auto now = chrono_clock::now();
+	const auto parseDuration = now - parseStartTime;
+  const auto execStartTime = now;
+
   if (Succeeded(result)) {
     Executor executor(&env, s_trace_stream, s_thread_options);
     ExecResult exec_result = executor.RunStartFunction(module);
     if (exec_result.result == interp::Result::Ok) {
       if (s_run_all_exports) {
         RunAllExports(module, &executor, RunVerbosity::Verbose);
+        const auto execFinishTime = chrono_clock::now();
+        const auto execDuration = execFinishTime - execStartTime;
+        std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+        std::cout << "exec time: " << to_us(execDuration) << "us\n";
       }
     } else {
       WriteResult(s_stdout_stream.get(), "error running start function",
