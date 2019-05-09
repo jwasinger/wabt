@@ -1318,8 +1318,13 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
   if (func->is_host) {
-    CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
-    CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
+    if (func_index == 0) {
+      printf("decoding call to ewasmHostFunc as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmCall));
+    } else {
+      CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
+      CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
+    }
   } else {
     CHECK_RESULT(EmitOpcode(Opcode::Call));
     CHECK_RESULT(EmitFuncOffset(cast<DefinedFunc>(func), func_index));

@@ -15,6 +15,7 @@
  */
 
 #include "src/interp/interp.h"
+#include <iostream>
 
 #include <algorithm>
 #include <cassert>
@@ -2017,6 +2018,11 @@ Result Thread::Run(int num_instructions) {
 
       case Opcode::I64Mul:
         CHECK_TRAP(Binop(Mul<uint64_t>));
+        break;
+
+      case Opcode::EwasmCall:
+        //CHECK_TRAP(Binop(Mul<uint64_t>));
+        //printf("EwasmCall!\n");
         break;
 
       case Opcode::I64DivS:

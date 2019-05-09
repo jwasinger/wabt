@@ -171,6 +171,24 @@ static interp::Result PrintCallback(const HostFunc* func,
   return interp::Result::Ok;
 }
 
+// function not implemented here, just need a stub so the import is valid
+// the implementation is in interp.cc under `case Opcode::EwasmCall`
+static interp::Result EwasmHostFunc(const HostFunc* func,
+                                    const interp::FuncSignature* sig,
+                                    const TypedValues& args,
+                                    TypedValues& results) {
+  //printf("ewasmHostFunc");
+  return interp::Result::Ok;
+}
+
+static interp::Result EthereumFinish(const HostFunc* func,
+                                    const interp::FuncSignature* sig,
+                                    const TypedValues& args,
+                                    TypedValues& results) {
+  //printf("EthereumFinish");
+  return interp::Result::Ok;
+}
+
 static void InitEnvironment(Environment* env) {
   if (s_host_print) {
     HostModule* host_module = env->AppendHostModule("host");
@@ -186,6 +204,14 @@ static void InitEnvironment(Environment* env) {
       return pair.second;
     };
   }
+
+  // this is just here so the import is valid
+  HostModule* host_module_debug = env->AppendHostModule("ewasm");
+  host_module_debug->AppendFuncExport("ewasmHostFunc", {{}, {}}, EwasmHostFunc);
+
+  HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
+  host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);
+
 }
 
 static wabt::Result ReadAndRunModule(const char* module_filename) {
@@ -211,6 +237,17 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
 
   if (Succeeded(result)) {
     Executor executor(&env, s_trace_stream, s_thread_options);
+    //RunAllExports(module, &executor, RunVerbosity::Verbose);
+
+    TypedValues args;
+    interp::Export* main_ = module->GetExport("main");
+    ExecResult exec_result = executor.RunExport(main_, args);
+
+    const auto execFinishTime = chrono_clock::now();
+    const auto execDuration = execFinishTime - execStartTime;
+    std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+    std::cout << "exec time: " << to_us(execDuration) << "us\n";
+    /*
     ExecResult exec_result = executor.RunStartFunction(module);
     if (exec_result.result == interp::Result::Ok) {
       if (s_run_all_exports) {
@@ -224,6 +261,7 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
       WriteResult(s_stdout_stream.get(), "error running start function",
                   exec_result.result);
     }
+    */
   }
   return result;
 }
