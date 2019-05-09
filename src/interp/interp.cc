@@ -2020,10 +2020,14 @@ Result Thread::Run(int num_instructions) {
         CHECK_TRAP(Binop(Mul<uint64_t>));
         break;
 
-      case Opcode::EwasmCall:
+      case Opcode::EwasmCall: {
         //CHECK_TRAP(Binop(Mul<uint64_t>));
         //printf("EwasmCall!\n");
+        uint64_t a = Pop<uint32_t>();
+        uint64_t b = Pop<uint32_t>();
+        uint64_t c = Pop<uint32_t>();
         break;
+      }
 
       case Opcode::I64DivS:
         CHECK_TRAP(BinopTrap(IntDivS<int64_t>));
