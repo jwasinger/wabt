@@ -2034,9 +2034,15 @@ Result Thread::Run(int num_instructions) {
       case Opcode::EwasmCall: {
         //printf("EwasmCall! ");
 
+        // try PopRep here instead??
+        uint32_t out_offset = PopRep<uint32_t>();
+        uint32_t v_offset = PopRep<uint32_t>();
+        uint32_t u_offset = PopRep<uint32_t>();
+        /*
         uint32_t out_offset = Pop<uint32_t>();
         uint32_t v_offset = Pop<uint32_t>();
         uint32_t u_offset = Pop<uint32_t>();
+        */
 
         Memory* mem = &env_->memories_[0]; char* memptr = (char*)mem->data.data();
         uint64_t * u = (uint64_t*) (memptr+u_offset);
