@@ -720,17 +720,26 @@ template<> v128 GetValue<v128>(Value v) { return v.v128_bits; }
 #define GOTO(offset) pc = &istream[offset]
 
 Memory* Thread::ReadMemory(const uint8_t** pc) {
+  printf("Thread::ReadMemory");
   Index memory_index = ReadU32(pc);
+  printf("Thread::ReadMemory memory_index: %d\n", memory_index);
   return &env_->memories_[memory_index];
 }
 
 template <typename MemType>
 Result Thread::GetAccessAddress(const uint8_t** pc, void** out_address) {
+  //printf("GetAccessAddress doing ReadMemory. *pc: %d\n", pc);
+  printf("GetAccessAddress doing ReadMemory.\n");
   Memory* memory = ReadMemory(pc);
+  printf("GetAccessAddress doing Pop.\n");
   uint64_t addr = static_cast<uint64_t>(Pop<uint32_t>()) + ReadU32(pc);
+  printf("GetAccessAddress checking OOB. addr: %llu\n", addr);
+  printf("GetAccessAddress checking OOB. memory->data.size(): %lu\n", memory->data.size());
   TRAP_IF(addr + sizeof(MemType) > memory->data.size(),
           MemoryAccessOutOfBounds);
+  printf("GetAccessAddress doing memory->data.data().\n");
   *out_address = memory->data.data() + static_cast<IstreamOffset>(addr);
+  printf("GetAccessAddress result::Ok.\n");
   return Result::Ok;
 }
 
@@ -819,6 +828,7 @@ void LoadFromMemory(T* dst, const void* src) {
 
 template <typename T>
 void StoreToMemory(void* dst, T value) {
+  printf("StoreToMemory.\n");
   memcpy(dst, &value, sizeof(T));
 }
 
@@ -838,6 +848,7 @@ Result Thread::Load(const uint8_t** pc) {
 
 template <typename MemType, typename ResultType>
 Result Thread::Store(const uint8_t** pc) {
+  printf("Threa::Store\n");
   typedef typename WrapMemType<ResultType, MemType>::type WrappedType;
   WrappedType value = PopRep<ResultType>();
   void* dst;
@@ -2023,9 +2034,70 @@ Result Thread::Run(int num_instructions) {
       case Opcode::EwasmCall: {
         //CHECK_TRAP(Binop(Mul<uint64_t>));
         //printf("EwasmCall!\n");
+        /*
         uint64_t a = Pop<uint32_t>();
         uint64_t b = Pop<uint32_t>();
         uint64_t c = Pop<uint32_t>();
+        */
+
+        //uint32_t a_ptr = Pop<uint32_t>();
+        //uint32_t b_ptr = Pop<uint32_t>();
+        
+        /*
+        case Opcode::I32Load:
+          CHECK_TRAP(Load<uint32_t>(&pc));
+        */
+
+        /*
+        Memory* Thread::ReadMemory(const uint8_t** pc) {
+          Index memory_index = ReadU32(pc);
+          return &env_->memories_[memory_index];
+        }
+
+        Memory* memory = ReadMemory(pc);
+        uint64_t addr = static_cast<uint64_t>(Pop<uint32_t>()) + ReadU32(pc);
+        printf("GetAccessAddress checking OOB. addr: %llu\n", addr);
+        TRAP_IF(addr + sizeof(MemType) > memory->data.size(),
+                MemoryAccessOutOfBounds);
+        *out_address = memory->data.data() + static_cast<IstreamOffset>(addr);
+        */
+
+        // GetAccessAddress(const uint8_t** pc, void** out_address) {
+        // GetAccessAddress does a Pop
+        //void* src;
+        //GetAccessAddress<MemType>(pc, &src)
+
+        //printf("EwasmCall. void a, b.\n");
+        //void* a;
+        //uint64_t* a;
+        //void* b;
+        // memory_index = 0
+        Memory* memory = &env_->memories_[0];
+        uint64_t addr = static_cast<uint64_t>(Pop<uint32_t>());
+        //printf("addr: %llu\n", addr);
+
+        void* a;
+        a = memory->data.data() + static_cast<IstreamOffset>(addr);
+        uint64_t a_val_dst;
+        memcpy(&a_val_dst, a, sizeof(uint64_t));
+        printf("a_val_dst: %llu\n", a_val_dst);
+
+        uint8_t* a_ptr = reinterpret_cast<uint8_t*>(&(memory->data[addr]));
+        printf("a: %hhu\n", *a_ptr);
+        printf("a+1: %hhu\n", *(a_ptr + 1));
+
+
+        //printf("EwasmCall. doing GetAccessAddress a.\n");
+        //CHECK_TRAP(GetAccessAddress<uint32_t>(&pc, &a));
+        //printf("EwasmCall. doing GetAccessAddress b.\n");
+        //GetAccessAddress<uint8_t>(&pc, &b);
+
+        // memcpy(dst, src, sizeof(T));
+        // MemType value;
+        uint32_t b_ptr = Pop<uint32_t>();
+        uint32_t res_ptr = Pop<uint32_t>();
+        // void* src;
+        // CHECK_TRAP(GetAccessAddress<MemType>(pc, &src));
         break;
       }
 
