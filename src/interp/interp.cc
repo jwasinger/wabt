@@ -720,26 +720,26 @@ template<> v128 GetValue<v128>(Value v) { return v.v128_bits; }
 #define GOTO(offset) pc = &istream[offset]
 
 Memory* Thread::ReadMemory(const uint8_t** pc) {
-  printf("Thread::ReadMemory");
+  //printf("Thread::ReadMemory");
   Index memory_index = ReadU32(pc);
-  printf("Thread::ReadMemory memory_index: %d\n", memory_index);
+  //printf("Thread::ReadMemory memory_index: %d\n", memory_index);
   return &env_->memories_[memory_index];
 }
 
 template <typename MemType>
 Result Thread::GetAccessAddress(const uint8_t** pc, void** out_address) {
   //printf("GetAccessAddress doing ReadMemory. *pc: %d\n", pc);
-  printf("GetAccessAddress doing ReadMemory.\n");
+  //printf("GetAccessAddress doing ReadMemory.\n");
   Memory* memory = ReadMemory(pc);
-  printf("GetAccessAddress doing Pop.\n");
+  //printf("GetAccessAddress doing Pop.\n");
   uint64_t addr = static_cast<uint64_t>(Pop<uint32_t>()) + ReadU32(pc);
-  printf("GetAccessAddress checking OOB. addr: %llu\n", addr);
-  printf("GetAccessAddress checking OOB. memory->data.size(): %lu\n", memory->data.size());
+  //printf("GetAccessAddress checking OOB. addr: %llu\n", addr);
+  //printf("GetAccessAddress checking OOB. memory->data.size(): %lu\n", memory->data.size());
   TRAP_IF(addr + sizeof(MemType) > memory->data.size(),
           MemoryAccessOutOfBounds);
-  printf("GetAccessAddress doing memory->data.data().\n");
+  //printf("GetAccessAddress doing memory->data.data().\n");
   *out_address = memory->data.data() + static_cast<IstreamOffset>(addr);
-  printf("GetAccessAddress result::Ok.\n");
+  //printf("GetAccessAddress result::Ok.\n");
   return Result::Ok;
 }
 
@@ -828,7 +828,7 @@ void LoadFromMemory(T* dst, const void* src) {
 
 template <typename T>
 void StoreToMemory(void* dst, T value) {
-  printf("StoreToMemory.\n");
+  //printf("StoreToMemory.\n");
   memcpy(dst, &value, sizeof(T));
 }
 
@@ -848,7 +848,7 @@ Result Thread::Load(const uint8_t** pc) {
 
 template <typename MemType, typename ResultType>
 Result Thread::Store(const uint8_t** pc) {
-  printf("Threa::Store\n");
+  //printf("Threa::Store\n");
   typedef typename WrapMemType<ResultType, MemType>::type WrappedType;
   WrappedType value = PopRep<ResultType>();
   void* dst;
@@ -2032,72 +2032,52 @@ Result Thread::Run(int num_instructions) {
         break;
 
       case Opcode::EwasmCall: {
-        //CHECK_TRAP(Binop(Mul<uint64_t>));
-        //printf("EwasmCall!\n");
-        /*
-        uint64_t a = Pop<uint32_t>();
-        uint64_t b = Pop<uint32_t>();
-        uint64_t c = Pop<uint32_t>();
-        */
+        //printf("EwasmCall! ");
 
-        //uint32_t a_ptr = Pop<uint32_t>();
-        //uint32_t b_ptr = Pop<uint32_t>();
-        
-        /*
-        case Opcode::I32Load:
-          CHECK_TRAP(Load<uint32_t>(&pc));
-        */
+        uint32_t out_offset = Pop<uint32_t>();
+        uint32_t v_offset = Pop<uint32_t>();
+        uint32_t u_offset = Pop<uint32_t>();
 
-        /*
-        Memory* Thread::ReadMemory(const uint8_t** pc) {
-          Index memory_index = ReadU32(pc);
-          return &env_->memories_[memory_index];
-        }
+        Memory* mem = &env_->memories_[0]; char* memptr = (char*)mem->data.data();
+        uint64_t * u = (uint64_t*) (memptr+u_offset);
+        uint64_t * v = (uint64_t*) (memptr+v_offset);
+        uint64_t * out = (uint64_t*) (memptr+out_offset);
+        //std::cout<<(uint64_t)memptr<<"  "<<params[0].value.i32<<" "<<params[1].value.i32<<" "<<params[2].value.i32<<"  "<<u<<" "<<v<<" "<<out<<"  "<<u[0]<<" "<<v[0]<<" "<<out[0]<<std::endl;
 
-        Memory* memory = ReadMemory(pc);
-        uint64_t addr = static_cast<uint64_t>(Pop<uint32_t>()) + ReadU32(pc);
-        printf("GetAccessAddress checking OOB. addr: %llu\n", addr);
-        TRAP_IF(addr + sizeof(MemType) > memory->data.size(),
-                MemoryAccessOutOfBounds);
-        *out_address = memory->data.data() + static_cast<IstreamOffset>(addr);
-        */
+        // multiply
+        // (there is a symmetry if you look close)
+        unsigned __int128 u0v0 = (unsigned __int128)u[0]*v[0];
+        unsigned __int128 u0v1 = (unsigned __int128)u[0]*v[1];
+        unsigned __int128 u0v2 = (unsigned __int128)u[0]*v[2];
+        uint64_t u0v3 = u[0]*v[3];
 
-        // GetAccessAddress(const uint8_t** pc, void** out_address) {
-        // GetAccessAddress does a Pop
-        //void* src;
-        //GetAccessAddress<MemType>(pc, &src)
+        unsigned __int128 u1v0 = (unsigned __int128)u[1]*v[0];
+        unsigned __int128 u1v1 = (unsigned __int128)u[1]*v[1];
+        uint64_t u1v2 = u[1]*v[2];
 
-        //printf("EwasmCall. void a, b.\n");
-        //void* a;
-        //uint64_t* a;
-        //void* b;
-        // memory_index = 0
-        Memory* memory = &env_->memories_[0];
-        uint64_t addr = static_cast<uint64_t>(Pop<uint32_t>());
-        //printf("addr: %llu\n", addr);
+        unsigned __int128 u2v0 = (unsigned __int128)u[2]*v[0];
+        uint64_t u2v1 = u[2]*v[1];
 
-        void* a;
-        a = memory->data.data() + static_cast<IstreamOffset>(addr);
-        uint64_t a_val_dst;
-        memcpy(&a_val_dst, a, sizeof(uint64_t));
-        printf("a_val_dst: %llu\n", a_val_dst);
+        uint64_t u3v0 = u[3]*v[0];
 
-        uint8_t* a_ptr = reinterpret_cast<uint8_t*>(&(memory->data[addr]));
-        printf("a: %hhu\n", *a_ptr);
-        printf("a+1: %hhu\n", *(a_ptr + 1));
+        // add things up
+        // (if you ignore the overflows, there is a symmetry if you look close)
+        unsigned __int128 out0 = u0v0;
+        out[0]=(uint64_t)out0;
 
+        unsigned __int128 temp1 = u0v1 + u1v0;
+        if (temp1<u0v1){out[3]=1;} //overflow of 128-bits
+        unsigned __int128 out1 = temp1 + (out0>>64);
+        if (out1<temp1){out[3]+=1;} //overflow of 128-bits
+        out[1] = (uint64_t)out1;
 
-        //printf("EwasmCall. doing GetAccessAddress a.\n");
-        //CHECK_TRAP(GetAccessAddress<uint32_t>(&pc, &a));
-        //printf("EwasmCall. doing GetAccessAddress b.\n");
-        //GetAccessAddress<uint8_t>(&pc, &b);
+        unsigned __int128 out2 = u0v2 + u2v0 + u1v1 + (out1>>64);
+        out[2] = (uint64_t)out2;
 
-        // memcpy(dst, src, sizeof(T));
-        // MemType value;
-        uint32_t b_ptr = Pop<uint32_t>();
-        uint32_t res_ptr = Pop<uint32_t>();
-        // void* src;
-        // CHECK_TRAP(GetAccessAddress<MemType>(pc, &src));
+        out[3] += u0v3 + u3v0 + u2v1 + u1v2 + (uint64_t)(out2>>64);
+
+        //std::cout<<u[0]<<" "<<u[1]<<" "<<u[2]<<" "<<u[3]<<"  "<<v[0]<<" "<<v[1]<<" "<<v[2]<<" "<<v[3]<<"  "<<out[0]<<" "<<out[1]<<" "<<out[2]<<" "<<out[3]<<"  "<<std::endl;
+
         break;
       }
 
