@@ -99,7 +99,7 @@ else ()
     -Wuninitialized
   )
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wold-style-cast")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wold-style-cast -O3 -flto -v")
 
   if (WERROR)
     add_definitions(-Werror)
@@ -291,6 +291,7 @@ if (NOT EMSCRIPTEN)
     add_executable(${EXE_NAME} ${EXE_SOURCES})
     add_dependencies(everything ${EXE_NAME})
     target_link_libraries(${EXE_NAME} ${EXE_LIBS})
+    target_link_libraries(${EXE_NAME} /usr/local/lib/libbenchmark.a)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 11)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
@@ -365,6 +366,14 @@ if (NOT EMSCRIPTEN)
       INSTALL
     )
 
+    # benchmark-interp
+    wabt_executable(
+      NAME benchmark-interp
+      SOURCES src/tools/benchmark-interp.cc
+      WITH_LIBM
+      INSTALL
+    )
+
     # wat-desugar
     wabt_executable(
       NAME wat-desugar
@@ -396,6 +405,7 @@ if (NOT EMSCRIPTEN)
     include_directories(
       third_party/gtest/googletest
       third_party/gtest/googletest/include
+      /usr/local/include
     )
 
     # gtest
