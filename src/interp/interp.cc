@@ -94,6 +94,12 @@ void WriteTypedValues(Stream* stream, const TypedValues& values) {
   }
 }
 
+
+static const uint32_t EwasmStackBottom = 3072;
+static const uint32_t EwasmStackTop = 4096;
+
+uint32_t EwasmStackOffset = 3072;
+
 #define V(name, str) str,
 static const char* s_trap_strings[] = {FOREACH_INTERP_RESULT(V)};
 #undef V
@@ -2031,18 +2037,51 @@ Result Thread::Run(int num_instructions) {
         CHECK_TRAP(Binop(Mul<uint64_t>));
         break;
 
+      /*
       case Opcode::EwasmCall: {
         //printf("EwasmCall! ");
 
         // try PopRep here instead??
-        uint32_t out_offset = PopRep<uint32_t>();
-        uint32_t v_offset = PopRep<uint32_t>();
-        uint32_t u_offset = PopRep<uint32_t>();
-        /*
-        uint32_t out_offset = Pop<uint32_t>();
+        //uint32_t out_offset = PopRep<uint32_t>();
+        //uint32_t v_offset = PopRep<uint32_t>();
+        //uint32_t u_offset = PopRep<uint32_t>();
+        
+        //uint32_t out_offset = Pop<uint32_t>();
+        //uint32_t v_offset = Pop<uint32_t>();
+        //uint32_t u_offset = Pop<uint32_t>();
+      */
+
+
+
+      case Opcode::EwasmCall: {
+        //printf("EwasmCall! ");
+
+        // pop two and push one
         uint32_t v_offset = Pop<uint32_t>();
         uint32_t u_offset = Pop<uint32_t>();
-        */
+
+        // use memory space to simulate a virtual stack
+        // simulate a return value being pushed onto the stack
+        // wasm module should tell the host environment what memory space to use as the virtual stack
+        // assume offset 3072 through 4096
+        // host function will use first 32 bytes at 3072, then next 32, then next 32..
+        // until it gets to 4096. then will circle back and overwrite 3072, then next 32...
+        // this simulates some stack depth, but overwrites the bottom depth instead of throwing a stack overflow.
+
+        // stack bounds are at wabt::interp::EwasmStackBottom/Top
+        // static const uint32_t EwasmStackBottom = 3072;
+        // static const uint32_t EwasmStackTop = 4096;
+
+        // current stack height is wabt::interp::EwasmStackOffset 
+        // uint32_t EwasmStackOffset = EwasmStackBottom; // 3072
+
+        wabt::interp::EwasmStackOffset = wabt::interp::EwasmStackOffset + 32;
+        if (wabt::interp::EwasmStackOffset > wabt::interp::EwasmStackTop) {
+          wabt::interp::EwasmStackOffset = wabt::interp::EwasmStackBottom;
+        }
+        uint32_t out_offset = wabt::interp::EwasmStackOffset;
+
+        // TODO: may want to zero out out_offset...
 
         Memory* mem = &env_->memories_[0]; char* memptr = (char*)mem->data.data();
         uint64_t * u = (uint64_t*) (memptr+u_offset);
@@ -2081,6 +2120,8 @@ Result Thread::Run(int num_instructions) {
         out[2] = (uint64_t)out2;
 
         out[3] += u0v3 + u3v0 + u2v1 + u1v2 + (uint64_t)(out2>>64);
+
+        Push<uint32_t>(out_offset);
 
         //std::cout<<u[0]<<" "<<u[1]<<" "<<u[2]<<" "<<u[3]<<"  "<<v[0]<<" "<<v[1]<<" "<<v[2]<<" "<<v[3]<<"  "<<out[0]<<" "<<out[1]<<" "<<out[2]<<" "<<out[3]<<"  "<<std::endl;
 

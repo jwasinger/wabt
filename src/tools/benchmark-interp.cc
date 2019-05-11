@@ -193,7 +193,9 @@ static void InitEnvironment(Environment* env) {
 
   // this is just here so the import is valid
   HostModule* host_module_debug = env->AppendHostModule("ewasm");
-  host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  //host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  //host_module_debug->AppendFuncExport("ewasmHostFunc", {{}, {}}, EwasmHostFunc);
 
   HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
   host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);
