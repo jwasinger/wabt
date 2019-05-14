@@ -99,7 +99,7 @@ else ()
     -Wuninitialized
   )
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wold-style-cast -O3 -flto -v")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -Wold-style-cast -O3 -flto -v")
 
   if (WERROR)
     add_definitions(-Werror)
@@ -309,46 +309,46 @@ if (NOT EMSCRIPTEN)
 
   if (BUILD_TOOLS)
     # wat2wasm
-    wabt_executable(
-      NAME wat2wasm
-      SOURCES src/tools/wat2wasm.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wat2wasm
+    #  SOURCES src/tools/wat2wasm.cc
+    #  INSTALL
+    #)
 
     # wast2json
-    wabt_executable(
-      NAME wast2json
-      SOURCES src/tools/wast2json.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wast2json
+    #  SOURCES src/tools/wast2json.cc
+    #  INSTALL
+    #)
 
     # wasm2wat
-    wabt_executable(
-      NAME wasm2wat
-      SOURCES src/tools/wasm2wat.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wasm2wat
+    #  SOURCES src/tools/wasm2wat.cc
+    #  INSTALL
+    #)
 
     # wasm2c
-    wabt_executable(
-      NAME wasm2c
-      SOURCES src/tools/wasm2c.cc src/c-writer.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wasm2c
+    #  SOURCES src/tools/wasm2c.cc src/c-writer.cc
+    #  INSTALL
+    #)
 
     # wasm-opcodecnt
-    wabt_executable(
-      NAME wasm-opcodecnt
-      SOURCES src/tools/wasm-opcodecnt.cc src/binary-reader-opcnt.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wasm-opcodecnt
+    #  SOURCES src/tools/wasm-opcodecnt.cc src/binary-reader-opcnt.cc
+    #  INSTALL
+    #)
 
     # wasm-objdump
-    wabt_executable(
-      NAME wasm-objdump
-      SOURCES src/tools/wasm-objdump.cc src/binary-reader-objdump.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wasm-objdump
+    #  SOURCES src/tools/wasm-objdump.cc src/binary-reader-objdump.cc
+    #  INSTALL
+    #)
 
     # wasm-interp
     wabt_executable(
@@ -358,13 +358,14 @@ if (NOT EMSCRIPTEN)
       INSTALL
     )
 
+
     # spectest-interp
-    wabt_executable(
-      NAME spectest-interp
-      SOURCES src/tools/spectest-interp.cc
-      WITH_LIBM
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME spectest-interp
+    #  SOURCES src/tools/spectest-interp.cc
+    #  WITH_LIBM
+    #  INSTALL
+    #)
 
     # benchmark-interp
     wabt_executable(
@@ -375,25 +376,25 @@ if (NOT EMSCRIPTEN)
     )
 
     # wat-desugar
-    wabt_executable(
-      NAME wat-desugar
-      SOURCES src/tools/wat-desugar.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wat-desugar
+    #  SOURCES src/tools/wat-desugar.cc
+    #  INSTALL
+    #)
 
     # wasm-validate
-    wabt_executable(
-      NAME wasm-validate
-      SOURCES src/tools/wasm-validate.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wasm-validate
+    #  SOURCES src/tools/wasm-validate.cc
+    #  INSTALL
+    #)
 
     # wasm-strip
-    wabt_executable(
-      NAME wasm-strip
-      SOURCES src/tools/wasm-strip.cc
-      INSTALL
-    )
+    #wabt_executable(
+    #  NAME wasm-strip
+    #  SOURCES src/tools/wasm-strip.cc
+    #  INSTALL
+    #)
   endif ()
 
   find_package(Threads)
@@ -406,6 +407,7 @@ if (NOT EMSCRIPTEN)
       third_party/gtest/googletest
       third_party/gtest/googletest/include
       /usr/local/include
+      third_party/intx/include
     )
 
     # gtest
@@ -419,11 +421,11 @@ if (NOT EMSCRIPTEN)
       src/test-hexfloat.cc
       third_party/gtest/googletest/src/gtest_main.cc
     )
-    wabt_executable(
-      NAME hexfloat_test
-      SOURCES ${HEXFLOAT_TEST_SRCS}
-      LIBS libgtest ${CMAKE_THREAD_LIBS_INIT}
-    )
+    #wabt_executable(
+    #  NAME hexfloat_test
+    #  SOURCES ${HEXFLOAT_TEST_SRCS}
+    #  LIBS libgtest ${CMAKE_THREAD_LIBS_INIT}
+    #)
 
     # wabt-unittests
     set(UNITTESTS_SRCS
@@ -438,11 +440,11 @@ if (NOT EMSCRIPTEN)
       src/test-wast-parser.cc
       third_party/gtest/googletest/src/gtest_main.cc
     )
-    wabt_executable(
-      NAME wabt-unittests
-      SOURCES ${UNITTESTS_SRCS}
-      LIBS libgtest ${CMAKE_THREAD_LIBS_INIT}
-    )
+    #wabt_executable(
+    #  NAME wabt-unittests
+    #  SOURCES ${UNITTESTS_SRCS}
+    #  LIBS libgtest ${CMAKE_THREAD_LIBS_INIT}
+    #)
 
     if (NOT CMAKE_VERSION VERSION_LESS "3.2")
       set(USES_TERMINAL USES_TERMINAL)
