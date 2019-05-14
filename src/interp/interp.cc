@@ -2165,7 +2165,34 @@ Result Thread::Run(int num_instructions) {
         break;
       }
       */
+      case Opcode::EwasmAddMod: {
+        uint32_t v_offset = Pop<uint32_t>();
+        uint32_t u_offset = Pop<uint32_t>();
+        uint32_t ret_offset = Pop<uint32_t>();
 
+        Memory* mem = &env_->memories_[0];
+        intx::uint256* u = reinterpret_cast<intx::uint256*>(&(mem->data[u_offset]));
+        intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
+
+        intx::uint256 ret = *u + *v;
+ 
+        StoreToMemory(mem->data.data() + ret_offset, ret);
+        break;
+      }
+      case Opcode::EwasmSubMod: {
+        uint32_t v_offset = Pop<uint32_t>();
+        uint32_t u_offset = Pop<uint32_t>();
+        uint32_t ret_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        intx::uint256* u = reinterpret_cast<intx::uint256*>(&(mem->data[u_offset]));
+        intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
+
+        intx::uint256 ret = *u - *v;
+ 
+        StoreToMemory(mem->data.data() + ret_offset, ret);
+        break;
+      }
       case Opcode::EwasmCall: {
         //printf("EwasmCall! ");
 
