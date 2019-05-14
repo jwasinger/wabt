@@ -167,6 +167,22 @@ static interp::Result EwasmHostFunc(const HostFunc* func,
   return interp::Result::Ok;
 }
 
+static interp::Result EwasmAddMod(const HostFunc* func,
+                                    const interp::FuncSignature* sig,
+                                    const TypedValues& args,
+                                    TypedValues& results) {
+  //printf("EthereumFinish");
+  return interp::Result::Ok;
+}
+
+static interp::Result EwasmSubMod(const HostFunc* func,
+                                    const interp::FuncSignature* sig,
+                                    const TypedValues& args,
+                                    TypedValues& results) {
+  //printf("EthereumFinish");
+  return interp::Result::Ok;
+}
+
 static interp::Result EthereumFinish(const HostFunc* func,
                                     const interp::FuncSignature* sig,
                                     const TypedValues& args,
@@ -214,6 +230,8 @@ static void InitEnvironment(Environment* env) {
 
   HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
   host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);
+  host_module_ethereum->AppendFuncExport("addmod", {{Type::I32, Type::I32}, {}}, EwasmAddMod);
+  host_module_ethereum->AppendFuncExport("submod", {{Type::I32, Type::I32}, {}}, EwasmSubMod);
 
 }
 /*
@@ -257,9 +275,11 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
 
 
 static wabt::Result InstantiateModule(const char* module_filename) {
+	/*
   constexpr auto to_us = [](chrono_clock::duration d) {
 		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 	};
+	*/
 
   wabt::Result result;
   //Environment env;
@@ -275,7 +295,7 @@ static wabt::Result InstantiateModule(const char* module_filename) {
 
   const auto now = chrono_clock::now();
 	const auto parseDuration = now - parseStartTime;
-  std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+  //std::cout << "parse time: " << to_us(parseDuration) << "us\n";
 
   return result;
 }

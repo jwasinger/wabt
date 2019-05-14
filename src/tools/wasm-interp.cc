@@ -215,9 +215,11 @@ static void InitEnvironment(Environment* env) {
 }
 
 static wabt::Result ReadAndRunModule(const char* module_filename) {
+	/*
   constexpr auto to_us = [](chrono_clock::duration d) {
 		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 	};
+	*/
 
   wabt::Result result;
   Environment env;
@@ -245,8 +247,9 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
 
     const auto execFinishTime = chrono_clock::now();
     const auto execDuration = execFinishTime - execStartTime;
-    std::cout << "parse time: " << to_us(parseDuration) << "us\n";
-    std::cout << "exec time: " << to_us(execDuration) << "us\n";
+    //std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+    //std::cout << "exec time: " << to_us(execDuration) << "us\n";
+    
     /*
     ExecResult exec_result = executor.RunStartFunction(module);
     if (exec_result.result == interp::Result::Ok) {
