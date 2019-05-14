@@ -17,6 +17,8 @@
 #include "src/interp/interp.h"
 #include <iostream>
 
+#include <intx/intx.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
@@ -2052,7 +2054,6 @@ Result Thread::Run(int num_instructions) {
       */
 
 
-
       case Opcode::EwasmCall: {
         //printf("EwasmCall! ");
 
@@ -2075,14 +2076,35 @@ Result Thread::Run(int num_instructions) {
         // current stack height is wabt::interp::EwasmStackOffset 
         // uint32_t EwasmStackOffset = EwasmStackBottom; // 3072
 
+        // TODO: test if `if EwasmStackOffset > EwasmStackTop` is a slowdown
         wabt::interp::EwasmStackOffset = wabt::interp::EwasmStackOffset + 32;
         if (wabt::interp::EwasmStackOffset > wabt::interp::EwasmStackTop) {
           wabt::interp::EwasmStackOffset = wabt::interp::EwasmStackBottom;
         }
         uint32_t out_offset = wabt::interp::EwasmStackOffset;
 
-        // TODO: may want to zero out out_offset...
+        Memory* mem = &env_->memories_[0]; char* memptr = (char*)mem->data.data();
+        intx::uint256 * u = (intx::uint256*) (memptr+u_offset);
+        intx::uint256 * v = (intx::uint256*) (memptr+v_offset);
+        intx::uint256 * out = (intx::uint256*) (memptr+out_offset);
 
+        // use intx for multiplication.  i think this works??
+        intx::uint256 intx_u;
+        std::memcpy(&intx_u, u, sizeof(intx_u));
+
+        intx::uint256 intx_v;
+        std::memcpy(&intx_v, v, sizeof(intx_v));
+
+        intx::uint256 intx_out;
+
+        intx_out = intx_u * intx_v;
+        std::memcpy(out, &intx_out, sizeof(intx_out));
+
+        Push<uint32_t>(u_offset);
+
+        /*
+        use @poemm subroutine
+        // TODO: may want to zero out out_offset...
         Memory* mem = &env_->memories_[0]; char* memptr = (char*)mem->data.data();
         uint64_t * u = (uint64_t*) (memptr+u_offset);
         uint64_t * v = (uint64_t*) (memptr+v_offset);
@@ -2122,6 +2144,7 @@ Result Thread::Run(int num_instructions) {
         out[3] += u0v3 + u3v0 + u2v1 + u1v2 + (uint64_t)(out2>>64);
 
         Push<uint32_t>(out_offset);
+        */
 
         //std::cout<<u[0]<<" "<<u[1]<<" "<<u[2]<<" "<<u[3]<<"  "<<v[0]<<" "<<v[1]<<" "<<v[2]<<" "<<v[3]<<"  "<<out[0]<<" "<<out[1]<<" "<<out[2]<<" "<<out[3]<<"  "<<std::endl;
 
