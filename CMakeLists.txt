@@ -266,6 +266,9 @@ add_library(wabt STATIC
   src/interp/interp-trace.cc
 )
 
+add_library(intx STATIC
+  third_party/intx/lib/intx/div.cpp
+)
 
 if (NOT EMSCRIPTEN)
   if (CODE_COVERAGE)
@@ -282,6 +285,9 @@ if (NOT EMSCRIPTEN)
 
     # Always link libwabt.
     set(EXE_LIBS "${EXE_LIBS};wabt")
+
+    # link intx
+    set(EXE_LIBS "${EXE_LIBS};intx")
 
     # Optionally link libm.
     if (EXE_WITH_LIBM AND (COMPILER_IS_CLANG OR COMPILER_IS_GNU))

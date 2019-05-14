@@ -2188,7 +2188,7 @@ Result Thread::Run(int num_instructions) {
         intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
         //*out = *u * *v; // even `*out = *u * *v;` vs `*u *= *v;` seems to make a difference
         *u *= *v;
-        // the result is wrong. TODO: Fix result
+        // the result is right
 
         break;
       }
