@@ -102,6 +102,23 @@ static const uint32_t EwasmStackTop = 4096;
 
 uint32_t EwasmStackOffset = 3072;
 
+uint32_t EwasmLoopCounter = 0;
+
+Memory* EwasmMem;
+intx::uint256* BignumStack[1000];
+
+void Environment::SetBignumStack(uint32_t mem_offset) {
+  //printf("SetBignumStack...\n");
+
+  EwasmMem = &memories_[0];
+
+  // 1000 stack slots
+  for (int i=0; i < 1000; i++) {
+    BignumStack[i] = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[mem_offset + (i*32)]));
+  }
+
+}
+
 #define V(name, str) str,
 static const char* s_trap_strings[] = {FOREACH_INTERP_RESULT(V)};
 #undef V
@@ -2166,17 +2183,17 @@ Result Thread::Run(int num_instructions) {
       }
       */
 
+      /*
       case Opcode::EwasmCall: {
         //printf("EwasmCall! ");
 
         // pop one like in evmone https://github.com/chfast/evmone/blob/master/lib/evmone/execution.cpp#L69
-        /*
-        void op_mul(execution_state& state, instr_argument) noexcept
-        {
-            state.item(1) *= state.item(0);
-            state.stack.pop_back();
-        }
-        */
+        //void op_mul(execution_state& state, instr_argument) noexcept
+        //{
+        //    state.item(1) *= state.item(0);
+        //    state.stack.pop_back();
+        //}
+
 
         uint32_t v_offset = Pop<uint32_t>();
         // v_offset is given by wasm
@@ -2186,13 +2203,34 @@ Result Thread::Run(int num_instructions) {
         Memory* mem = &env_->memories_[0];
         intx::uint256* u = reinterpret_cast<intx::uint256*>(&(mem->data[u_offset]));
         intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
-        //*out = *u * *v; // even `*out = *u * *v;` vs `*u *= *v;` seems to make a difference
+        // *out = *u * *v; // even `*out = *u * *v;` vs `*u *= *v;` seems to make a difference
         *u *= *v;
         // the result is right
 
         break;
       }
+      */
 
+      case Opcode::EwasmCall: {
+        //printf("EwasmCall! ");
+
+        uint32_t v_offset = Pop<uint32_t>();
+        // v_offset is given by wasm
+        // we know v_offset stays the same so we are cheating a little bit,
+        // because we don't have to convert v_offset to *BignumStack[0]
+        // but the wasm code is pushing a memoffset before every call, to mimic the EVM code
+
+        *BignumStack[1] *= *BignumStack[0];
+
+        /*
+        EwasmLoopCounter++;
+        if (EwasmLoopCounter > 639900) {
+          std::cout << "Ewasm BignumStack[1]:" << intx::to_string(*BignumStack[1]) << std::endl;
+        }
+        */
+
+        break;
+      }
 
       case Opcode::I64DivS:
         CHECK_TRAP(BinopTrap(IntDivS<int64_t>));

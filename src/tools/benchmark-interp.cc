@@ -192,10 +192,25 @@ static void InitEnvironment(Environment* env) {
   }
 
   // this is just here so the import is valid
-  HostModule* host_module_debug = env->AppendHostModule("ewasm");
-  host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  HostModule* host_module_ewasm = env->AppendHostModule("ewasm");
+  host_module_ewasm->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
   //host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
   //host_module_debug->AppendFuncExport("ewasmHostFunc", {{}, {}}, EwasmHostFunc);
+
+  host_module_ewasm->AppendFuncExport(
+    "setBignumStack",
+    {{Type::I32}, {}},
+    [&env](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      //interface.mulmodmont256(args[0].value.i32, args[1].value.i32, args[2].value.i32, args[3].value.i32, args[4].value.i32);
+      env->SetBignumStack(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
 
   HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
   host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);

@@ -1322,6 +1322,7 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
       printf("decoding call to ewasmHostFunc as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmCall));
     } else {
+      printf("decoding call to setBignumStack. func_index: %d\n", func_index);
       CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
       CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
     }

@@ -402,6 +402,8 @@ class Environment {
   Index GetTableCount() const { return tables_.size(); }
   Index GetModuleCount() const { return modules_.size(); }
 
+  void SetBignumStack(uint32_t mem_offset);
+
   Index GetLastModuleIndex() const {
     return modules_.empty() ? kInvalidIndex : modules_.size() - 1;
   }
