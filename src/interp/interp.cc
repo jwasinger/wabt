@@ -2129,6 +2129,7 @@ Result Thread::Run(int num_instructions) {
       }
       */
 
+      /*
       case Opcode::EwasmCall: {
         //printf("EwasmCall! ");
 
@@ -2163,6 +2164,35 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
+      */
+
+      case Opcode::EwasmCall: {
+        //printf("EwasmCall! ");
+
+        // pop one like in evmone https://github.com/chfast/evmone/blob/master/lib/evmone/execution.cpp#L69
+        /*
+        void op_mul(execution_state& state, instr_argument) noexcept
+        {
+            state.item(1) *= state.item(0);
+            state.stack.pop_back();
+        }
+        */
+
+        uint32_t v_offset = Pop<uint32_t>();
+        // v_offset is given by wasm
+        // u_offset stays the same, reuse it to simulate `state.item(1)` stack slot.
+        uint32_t u_offset = v_offset - 32;
+
+        Memory* mem = &env_->memories_[0];
+        intx::uint256* u = reinterpret_cast<intx::uint256*>(&(mem->data[u_offset]));
+        intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
+        //*out = *u * *v; // even `*out = *u * *v;` vs `*u *= *v;` seems to make a difference
+        *u *= *v;
+        // the result is wrong. TODO: Fix result
+
+        break;
+      }
+
 
       case Opcode::I64DivS:
         CHECK_TRAP(BinopTrap(IntDivS<int64_t>));
