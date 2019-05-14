@@ -99,7 +99,7 @@ else ()
     -Wuninitialized
   )
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -Wold-style-cast -O3 -flto -v")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -Wold-style-cast -O3 -v")
 
   if (WERROR)
     add_definitions(-Werror)
@@ -298,6 +298,11 @@ if (NOT EMSCRIPTEN)
     add_dependencies(everything ${EXE_NAME})
     target_link_libraries(${EXE_NAME} ${EXE_LIBS})
     target_link_libraries(${EXE_NAME} /usr/local/lib/libbenchmark.a)
+
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    target_link_libraries(${EXE_NAME} Threads::Threads)
+
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 11)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
@@ -357,12 +362,12 @@ if (NOT EMSCRIPTEN)
     #)
 
     # wasm-interp
-    wabt_executable(
-      NAME wasm-interp
-      SOURCES src/tools/wasm-interp.cc
-      WITH_LIBM
-      INSTALL
-    )
+    #wabt_executable(
+	    #NAME wasm-interp
+      #SOURCES src/tools/wasm-interp.cc
+      #WITH_LIBM
+      #INSTALL
+      #)
 
 
     # spectest-interp

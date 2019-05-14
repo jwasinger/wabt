@@ -1318,7 +1318,7 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
   if (func->is_host) {
-    if (func_index == 0) {
+    if (func_index < 3) {
       printf("decoding call to ewasmHostFunc as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmCall));
     } else {
