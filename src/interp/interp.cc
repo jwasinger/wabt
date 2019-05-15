@@ -119,6 +119,68 @@ void Environment::SetBignumStack(uint32_t mem_offset) {
 
 }
 
+typedef unsigned __int128 uint128_t;
+
+void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, uint64_t* out){
+   uint64_t A[] = {0,0,0,0,0,0,0,0};
+   for (int i=0; i<4; i++){
+     uint64_t ui = (A[i]+x[i]*y[0])*inv[0];
+     uint64_t carry = 0;
+     //uint64_t overcarry = 0;
+     for (int j=0; j<4; j++){
+       uint128_t xiyj = (uint128_t)x[i]*y[j];
+       uint128_t uimj = (uint128_t)ui*m[j];
+       uint128_t partial_sum = xiyj+carry;
+       uint128_t sum = uimj+A[i+j]+partial_sum;
+       A[i+j] = (uint64_t)sum;
+       carry = sum>>64;
+       // if there was overflow in the sum beyond the carry bits
+       if (sum<partial_sum){
+         int k=2;
+         while ( i+j+k<8 && A[i+j+k]==0xffffffffffffffff ){
+           A[i+j+k]=0;
+           k++;
+         }
+         if (i+j+k<8)
+           A[i+j+k]+=1;
+       }
+     }
+     A[i+4]+=carry;
+   }
+
+   // instead of right shift, we just get the correct values
+   out[0] = A[4];
+   out[1] = A[5];
+   out[2] = A[6];
+   out[3] = A[7];
+
+   // final subtraction, first see if necessary
+   // this out <= m check is untested
+   int out_ge_m = 1;
+   for (int i=0;i<4;i++){
+     if (out[4-i-1] < m[4-i-1]){
+       out_ge_m=0;
+       break;
+     }
+     else if (out[4-i-1]>m[4-i-1])
+       break;
+   }
+   if (out_ge_m){
+      // subtract 256 for x>=y, this is algorithm 14.9
+      // this subtraction is untested
+      uint64_t c=0;
+      for (int i=0; i<4;i++){
+        uint64_t temp = out[i]-m[i]-c;
+        if (out[i]>=m[i]+c)
+          c=0;
+        else
+          c=1;
+        out[i]=temp;
+      }
+    }
+}
+
+
 #define V(name, str) str,
 static const char* s_trap_strings[] = {FOREACH_INTERP_RESULT(V)};
 #undef V
@@ -2226,24 +2288,67 @@ Result Thread::Run(int num_instructions) {
 
         //std::cout << "EwasmSubMod.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << "  ret:" << intx::to_string(*ret) << std::endl;
 
+        //std::cout << "EwasmSubMod." << std::endl;
+
         break;
       }
 
+
+      /*
       case Opcode::EwasmMulModMont: {
-        /*
-        uint32_t v_offset = Pop<uint32_t>();
-        uint32_t u_offset = Pop<uint32_t>();
+        using intx::uint512;
+
         uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t inv_offset = Pop<uint32_t>();
+        uint32_t mod_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* u = reinterpret_cast<intx::uint256*>(&(mem->data[u_offset]));
-        intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        intx::uint256* mod = reinterpret_cast<intx::uint256*>(&(mem->data[mod_offset]));
+        intx::uint256* inv = reinterpret_cast<intx::uint256*>(&(mem->data[inv_offset]));
+        intx::uint256* ret = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
 
-        intx::uint256 ret = *u - *v;
- 
-        StoreToMemory(mem->data.data() + ret_offset, ret);
+        auto mask = intx::from_string<intx::uint128>("340282366920938463463374607431768211455");
+
+        auto res1 = uint512{*a} * uint512{*b};
+        //auto k0 = ((inv * res1).lo).lo;
+        auto k0 = (uint512{*inv} * res1).lo & mask;
+        auto res2 = ((uint512{k0} * uint512{*mod}) + res1) >> 128;
+        auto k1 = (res2 * uint512{*inv}).lo & mask;
+        auto result = (((uint512{k1} * uint512{*mod}) + res2) >> 128).lo;
+        // auto ret = ((uint512{k1} * uint512{mod}) + res2).high ??
+
+        if (result >= *mod) {
+          result = result - *mod;
+        }
+        *ret = result;
+
         break;
-        */
+      }
+      */
+
+
+      case Opcode::EwasmMulModMont: {
+
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t inv_offset = Pop<uint32_t>();
+        uint32_t mod_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&(mem->data[mod_offset]));
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&(mem->data[inv_offset]));
+        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        montgomery_multiplication_256(a, b, mod, inv, ret);
+
+        break;
       }
 
 

@@ -1326,17 +1326,13 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
       // submod256
       printf("decoding call to EwasmSubMod as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmSubMod));
-    }
-    /*
-    else if (func_index == 2) {
+    } else if (func_index == 2) {
       // mulmodmont
       printf("decoding call to EwasmMulModMont as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmMulModMont));
     } else if (func_index == 3) {
       printf("decoding call to Ewasm UNIMPLEMENTED as an opcode...\n");
-    }
-    */
-    else {
+    } else {
       // all other host functions
       //printf("decoding call to setBignumStack. func_index: %d\n", func_index);
       CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));

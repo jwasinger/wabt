@@ -163,7 +163,6 @@ static interp::Result EwasmHostFunc(const HostFunc* func,
                                     const interp::FuncSignature* sig,
                                     const TypedValues& args,
                                     TypedValues& results) {
-  //printf("ewasmHostFunc");
   return interp::Result::Ok;
 }
 
@@ -171,7 +170,6 @@ static interp::Result EwasmAddMod(const HostFunc* func,
                                     const interp::FuncSignature* sig,
                                     const TypedValues& args,
                                     TypedValues& results) {
-  //printf("EthereumFinish");
   return interp::Result::Ok;
 }
 
@@ -179,9 +177,16 @@ static interp::Result EwasmSubMod(const HostFunc* func,
                                     const interp::FuncSignature* sig,
                                     const TypedValues& args,
                                     TypedValues& results) {
-  //printf("EthereumFinish");
   return interp::Result::Ok;
 }
+
+static interp::Result EwasMulModMont(const HostFunc* func,
+                                    const interp::FuncSignature* sig,
+                                    const TypedValues& args,
+                                    TypedValues& results) {
+  return interp::Result::Ok;
+}
+
 
 static interp::Result EthereumFinish(const HostFunc* func,
                                     const interp::FuncSignature* sig,
@@ -215,6 +220,7 @@ static void InitEnvironment(Environment* env) {
 
   host_module_ewasm->AppendFuncExport("addmod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmAddMod);
   host_module_ewasm->AppendFuncExport("submod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmSubMod);
+  host_module_ewasm->AppendFuncExport("mulmodmont256", {{Type::I32, Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasMulModMont);
 
   host_module_ewasm->AppendFuncExport(
     "setBignumStack",
