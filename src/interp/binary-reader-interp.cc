@@ -1318,11 +1318,27 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
   if (func->is_host) {
-    if (func_index < 3) {
-      printf("decoding call to ewasmHostFunc as an opcode...\n");
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmCall));
-    } else {
-      printf("decoding call to setBignumStack. func_index: %d\n", func_index);
+    if (func_index == 0) {
+      // addmod256
+      printf("decoding call to EwasmAddMod as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmAddMod));
+    } else if (func_index == 1) {
+      // submod256
+      printf("decoding call to EwasmSubMod as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmSubMod));
+    }
+    /*
+    else if (func_index == 2) {
+      // mulmodmont
+      printf("decoding call to EwasmMulModMont as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmMulModMont));
+    } else if (func_index == 3) {
+      printf("decoding call to Ewasm UNIMPLEMENTED as an opcode...\n");
+    }
+    */
+    else {
+      // all other host functions
+      //printf("decoding call to setBignumStack. func_index: %d\n", func_index);
       CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
       CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
     }

@@ -209,9 +209,12 @@ static void InitEnvironment(Environment* env) {
 
   // this is just here so the import is valid
   HostModule* host_module_ewasm = env->AppendHostModule("ewasm");
-  host_module_ewasm->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  //host_module_ewasm->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
   //host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
   //host_module_debug->AppendFuncExport("ewasmHostFunc", {{}, {}}, EwasmHostFunc);
+
+  host_module_ewasm->AppendFuncExport("addmod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmAddMod);
+  host_module_ewasm->AppendFuncExport("submod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmSubMod);
 
   host_module_ewasm->AppendFuncExport(
     "setBignumStack",
@@ -228,10 +231,11 @@ static void InitEnvironment(Environment* env) {
     }
   );
 
+
+
   HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
   host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);
-  host_module_ethereum->AppendFuncExport("addmod", {{Type::I32, Type::I32}, {}}, EwasmAddMod);
-  host_module_ethereum->AppendFuncExport("submod", {{Type::I32, Type::I32}, {}}, EwasmSubMod);
+
 
 }
 /*

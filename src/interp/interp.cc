@@ -2182,21 +2182,55 @@ Result Thread::Run(int num_instructions) {
         break;
       }
       */
+
       case Opcode::EwasmAddMod: {
-        uint32_t v_offset = Pop<uint32_t>();
-        uint32_t u_offset = Pop<uint32_t>();
         uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t mod_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* u = reinterpret_cast<intx::uint256*>(&(mem->data[u_offset]));
-        intx::uint256* v = reinterpret_cast<intx::uint256*>(&(mem->data[v_offset]));
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        intx::uint256* mod = reinterpret_cast<intx::uint256*>(&(mem->data[mod_offset]));
+        intx::uint256* ret = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
 
-        intx::uint256 ret = *u + *v;
- 
-        StoreToMemory(mem->data.data() + ret_offset, ret);
+        *ret = *a + *b;
+
+        if (*ret >= *mod) {
+          *ret = *ret - *mod;
+        }
+
+        //std::cout << "EwasmAddMod.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << "  ret:" << intx::to_string(*ret) << std::endl;
+
         break;
       }
+
       case Opcode::EwasmSubMod: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t mod_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        intx::uint256* mod = reinterpret_cast<intx::uint256*>(&(mem->data[mod_offset]));
+        intx::uint256* ret = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+
+        if (*a < *b) {
+          *a = *a + *mod;
+        }
+
+        *ret = *a - *b;
+
+        //std::cout << "EwasmSubMod.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << "  ret:" << intx::to_string(*ret) << std::endl;
+
+        break;
+      }
+
+      case Opcode::EwasmMulModMont: {
+        /*
         uint32_t v_offset = Pop<uint32_t>();
         uint32_t u_offset = Pop<uint32_t>();
         uint32_t ret_offset = Pop<uint32_t>();
@@ -2209,7 +2243,9 @@ Result Thread::Run(int num_instructions) {
  
         StoreToMemory(mem->data.data() + ret_offset, ret);
         break;
+        */
       }
+
 
       /*
       case Opcode::EwasmCall: {
@@ -2239,7 +2275,7 @@ Result Thread::Run(int num_instructions) {
       }
       */
 
-      case Opcode::EwasmCall: {
+      case Opcode::EwasmMul256: {
         //printf("EwasmCall! ");
 
         uint32_t v_offset = Pop<uint32_t>();

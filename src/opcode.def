@@ -232,9 +232,14 @@ WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe4, InterpDropKeep, "drop_keep")
 //WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0x10, Call, "call")
 //WABT_OPCODE(I64,  I64,  I64,  ___,  0,  0,    0x7e, I64Mul, "i64.mul")
 //WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe5, EwasmCall, "ewasm_call")
-WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmCall, "ewasm_call")
+/* note that the number of input params here doesn't matter */
+/* the implementation in interp.cc can pop as many input params as it wants */
+/* the name (last argument here) also doesn't matter, as it is for parsing wat */
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmMul256, "ewasm_mul256")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe6, EwasmAddMod, "ewasm_addmod")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe7, EwasmSubMod, "ewasm_submod")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe8, EwasmMulModMont, "ewasm_mulmodmont")
+
 
 /* Saturating float-to-int opcodes (--enable-saturating-float-to-int) */
 WABT_OPCODE(I32,  F32,  ___,  ___,  0,  0xfc, 0x00, I32TruncSatF32S, "i32.trunc_sat_f32_s")
