@@ -403,6 +403,7 @@ class Environment {
   Index GetModuleCount() const { return modules_.size(); }
 
   void SetBignumStack(uint32_t mem_offset);
+  void PrintBignumStack(uint32_t a_offset, uint32_t b_offset, uint32_t c_offset);
 
   Index GetLastModuleIndex() const {
     return modules_.empty() ? kInvalidIndex : modules_.size() - 1;

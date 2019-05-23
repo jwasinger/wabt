@@ -1318,20 +1318,36 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
   if (func->is_host) {
-    if (func_index == 0) {
+    // TODO: convert func_index to function name
+    //printf("decoding call to host function..\n");
+    HostFunc * host_func = cast<HostFunc>(func);
+    //printf("host_func->module_name: %s\n", host_func->module_name.c_str());
+    //printf("host_func->field_name: %s\n", host_func->field_name.c_str());
+    auto func_name = host_func->field_name;
+
+    //if (func_index == 0) {
+    if (func_name == "addmod256") {
       // addmod256
-      printf("decoding call to EwasmAddMod as an opcode...\n");
+      //printf("decoding call to addmod256 as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmAddMod));
-    } else if (func_index == 1) {
+    } else if (func_name == "submod256") {
       // submod256
-      printf("decoding call to EwasmSubMod as an opcode...\n");
+      //printf("decoding call to submod256 as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmSubMod));
-    } else if (func_index == 2) {
+    } else if (func_name == "mulmodmont256") {
       // mulmodmont
-      printf("decoding call to EwasmMulModMont as an opcode...\n");
+      //printf("decoding call to mulmodmont256 as an opcode...\n");
       CHECK_RESULT(EmitOpcode(Opcode::EwasmMulModMont));
-    } else if (func_index == 3) {
-      printf("decoding call to Ewasm UNIMPLEMENTED as an opcode...\n");
+    } else if (func_name == "addmodbn") {
+      //printf("decoding call to addmodbn as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmAddModBn));
+    } else if (func_name == "submodbn") {
+      //printf("decoding call to submodbn as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmSubModBn));
+    } else if (func_name == "mulmodmontbn") {
+      //printf("decoding call to mulmodmontbn as an opcode...\n");
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmMulModMontBn));
+
     } else {
       // all other host functions
       //printf("decoding call to setBignumStack. func_index: %d\n", func_index);

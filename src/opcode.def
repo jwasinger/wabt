@@ -239,6 +239,9 @@ WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmMul256, "ewasm_mul256")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe6, EwasmAddMod, "ewasm_addmod")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe7, EwasmSubMod, "ewasm_submod")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe8, EwasmMulModMont, "ewasm_mulmodmont")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe9, EwasmAddModBn, "ewasm_addmodbn")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xea, EwasmSubModBn, "ewasm_submodbn")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xeb, EwasmMulModMontBn, "ewasm_mulmodmontbn")
 
 
 /* Saturating float-to-int opcodes (--enable-saturating-float-to-int) */

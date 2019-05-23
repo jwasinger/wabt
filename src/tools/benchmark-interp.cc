@@ -16,6 +16,8 @@
 
 #include <benchmark/benchmark.h>
 
+//#include <intx/intx.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
@@ -221,6 +223,28 @@ static void InitEnvironment(Environment* env) {
   host_module_ewasm->AppendFuncExport("addmod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmAddMod);
   host_module_ewasm->AppendFuncExport("submod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmSubMod);
   host_module_ewasm->AppendFuncExport("mulmodmont256", {{Type::I32, Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasMulModMont);
+
+  host_module_ewasm->AppendFuncExport("addmodbn", {{Type::I32, Type::I32}, {Type::I32}}, EwasmAddMod);
+  host_module_ewasm->AppendFuncExport("submodbn", {{Type::I32, Type::I32}, {Type::I32}}, EwasmSubMod);
+  host_module_ewasm->AppendFuncExport("mulmodmontbn", {{Type::I32, Type::I32}, {Type::I32}}, EwasMulModMont);
+
+  //host_module_ewasm->AppendFuncExport("debugPrint", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmDebugPrint);
+
+  host_module_ewasm->AppendFuncExport(
+    "debugPrint",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [&env](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      printf("EwasmDebugPrint. \n");
+      env->PrintBignumStack(args[0].value.i32, args[1].value.i32, args[2].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
 
   host_module_ewasm->AppendFuncExport(
     "setBignumStack",
