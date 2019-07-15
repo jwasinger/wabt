@@ -2617,7 +2617,7 @@ Result Thread::Run(int num_instructions) {
 
         // scrap
         //uint64_t* ret = reinterpret_cast<uint64_t*>(BignumStack[wabt::interp::BignumStackIndex]);
-        
+
         // this was working
         //uint32_t ret_offset = GetBignumStackMemOffset(wabt::interp::BignumStackIndex);
 
