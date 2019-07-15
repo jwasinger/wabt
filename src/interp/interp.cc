@@ -2436,26 +2436,27 @@ Result Thread::Run(int num_instructions) {
 
 
       case Opcode::EwasmAddModBn: {
+        uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
         // TODO: if a_offset and b_offset are already intx::uint256, then we dont need to recast.
-        Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        //Memory* mem = &env_->memories_[0];
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[b_offset]));
 
         //std::cout << "EwasmAddModBn a_offset: " << a_offset << "  b_offset: " << b_offset << std::endl;
         //std::cout << "EwasmAddModBn a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
 
 
         //intx::uint256* mod = reinterpret_cast<intx::uint256*>(&(mem->data[mod_offset]));
-        //intx::uint256* ret = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[ret_offset]));
 
         //uint32_t bignum_stack_offset = wabt::interp::BignumStackIndex;
         
         //intx::uint256* ret = BignumStack[wabt::interp::BignumStackIndex];
 
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[GetBignumStackMemOffset(wabt::interp::BignumStackIndex)]));
+        //intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[GetBignumStackMemOffset(wabt::interp::BignumStackIndex)]));
 
         *ret_mem = *a + *b;
 
@@ -2478,25 +2479,30 @@ Result Thread::Run(int num_instructions) {
 
 
         //CHECK_TRAP(Push<uint32_t>(GetBignumStackMemOffset(wabt::interp::BignumStackIndex)));
-        Push<uint32_t>(GetBignumStackMemOffset(wabt::interp::BignumStackIndex));
+        //Push<uint32_t>(GetBignumStackMemOffset(wabt::interp::BignumStackIndex));
 
-        incrementBignumStack();
+        //incrementBignumStack();
         break;
       }
 
       case Opcode::EwasmSubModBn: {
+        uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
-        Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+
+        //Memory* mem = &env_->memories_[0];
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[b_offset]));
+
+        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[ret_offset]));
+
 
         //std::cout << "EwasmSubModBn a_offset: " << a_offset << "  b_offset: " << b_offset << std::endl;
         //std::cout << "EwasmSubModBn a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
 
         //intx::uint256* ret = BignumStack[wabt::interp::BignumStackIndex];
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[GetBignumStackMemOffset(wabt::interp::BignumStackIndex)]));
+        //intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[GetBignumStackMemOffset(wabt::interp::BignumStackIndex)]));
 
         if (*a < *b) {
           *ret_mem = (*a + wabt::interp::BignumModulus) - *b;
@@ -2509,9 +2515,9 @@ Result Thread::Run(int num_instructions) {
 
 
         //CHECK_TRAP(Push<uint32_t>(GetBignumStackMemOffset(wabt::interp::BignumStackIndex)));
-        Push<uint32_t>(GetBignumStackMemOffset(wabt::interp::BignumStackIndex));
+        //Push<uint32_t>(GetBignumStackMemOffset(wabt::interp::BignumStackIndex));
 
-        incrementBignumStack();
+        //incrementBignumStack();
         break;
       }
 
@@ -2595,29 +2601,34 @@ Result Thread::Run(int num_instructions) {
 
 
       case Opcode::EwasmMulModMontBn: {
+        uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
+
+        //Memory* mem = &env_->memories_[0];
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(EwasmMem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&(EwasmMem->data[b_offset]));
 
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
         uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
 
+        uint64_t* ret = reinterpret_cast<uint64_t*>(&(EwasmMem->data[ret_offset]));
+
+        // scrap
         //uint64_t* ret = reinterpret_cast<uint64_t*>(BignumStack[wabt::interp::BignumStackIndex]);
-        uint32_t ret_offset = GetBignumStackMemOffset(wabt::interp::BignumStackIndex);
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+        
+        // this was working
+        //uint32_t ret_offset = GetBignumStackMemOffset(wabt::interp::BignumStackIndex);
 
         montgomery_multiplication_256(a, b, mod, inv, ret);
 
-        intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-
+        //intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
         //std::cout << "EwasmMulModMontBn result:" << intx::to_string(*ret_intx) << std::endl;
 
-        CHECK_TRAP(Push<uint32_t>(ret_offset));
+        //CHECK_TRAP(Push<uint32_t>(ret_offset));
 
-        incrementBignumStack();
+        //incrementBignumStack();
         break;
       }
 
