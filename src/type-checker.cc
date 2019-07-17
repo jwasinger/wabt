@@ -355,6 +355,7 @@ Result TypeChecker::OnAtomicNotify(Opcode opcode) {
 }
 
 Result TypeChecker::OnBinary(Opcode opcode) {
+  //printf("TypeChecker::OnBinary. opcode: %s\n", opcode.GetName());
   return CheckOpcode2(opcode);
 }
 
