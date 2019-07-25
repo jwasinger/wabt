@@ -5,6 +5,81 @@
 #include <memory>
 
 #include <iostream>
+#include <regex>
+
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <cctype>
+
+using bytes = std::basic_string<uint8_t>;
+
+
+bytes from_hex(std::string_view hex)
+{
+    if (hex.length() % 2 == 1)
+        //throw std::length_error{"the length of the input is odd"};
+        printf("ERROR: the length of the input is odd\n");
+
+    bytes bs;
+    int b = 0;
+    for (size_t i = 0; i < hex.size(); ++i)
+    {
+        auto h = hex[i];
+        int v;
+        if (h >= '0' && h <= '9')
+            v = h - '0';
+        else if (h >= 'a' && h <= 'f')
+            v = h - 'a' + 10;
+        else if (h >= 'A' && h <= 'F')
+            v = h - 'A' + 10;
+        else
+            //throw std::out_of_range{"not a hex digit"};
+            printf("ERROR: not a hex digit\n");
+
+        if (i % 2 == 0)
+            b = v << 4;
+        else
+            bs.push_back(static_cast<uint8_t>(b | v));
+    }
+    return bs;
+}
+
+
+/*
+std::ifstream blockdata_file{"./test_block_data.hex"};
+std::string blockdata_hex{std::istreambuf_iterator<char>{blockdata_file}, std::istreambuf_iterator<char>{}};
+blockdata_hex.erase(
+    std::remove_if(blockdata_hex.begin(), blockdata_hex.end(), [](auto x) { return std::isspace(x); }),
+    blockdata_hex.end());
+
+//auto b = benchmark_case{};
+//b.code = std::make_shared<bytes>(from_hex(code_hex));
+printf("blockdata_hex length: %d\n", blockdata_hex.size());
+
+auto blockdata_bytes = std::make_shared<bytes>(from_hex(blockdata_hex));
+*/
+
+
+//std::ifstream blockDataFile;
+//blockDataFile.open("./test_block_data.hex");
+
+//std::stringstream strStream;
+//strStream << inFile.rdbuf(); //read the file
+
+
+std::ifstream blockDataFile("./test_block_data.hex");
+//std::stringstream blockDataFileStream << blockDataFile.rdbuf();
+//std::stringstream blockDataFileStream << blockDataFile.rdbuf();
+std::stringstream blockDataFileStream;
+blockDataFileStream << blockDataFile.rdbuf();
+//blockDataFileStream << blockDataFile.rdbuf();
+std::string hexbytes = blockDataFileStream.str(); //str holds the content of the file
+
+cout << "hex bytes length:" << hexbytes.length() << endl;
+blockdata_bytes = from_hex(hexbytes);
+
+
 
 using namespace wabt;
 using namespace wabt::interp;
