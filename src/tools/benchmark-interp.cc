@@ -414,6 +414,7 @@ namespace
     // TODO: InstantiateModule before execute
 
     for (auto _ : state) {
+      result = InstantiateModule(s_infile);
       result = ExecuteModule();
     }
 
