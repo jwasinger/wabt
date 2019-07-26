@@ -110,13 +110,13 @@ void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* 
 
   int block_data_size = std::strlen((char*)blockData);
 
-  std::cout << "blockData[] length:" << block_data_size << std::endl;
+  //std::cout << "blockData[] length:" << block_data_size << std::endl;
   //printf("blockData: %s\n", blockData);
 
-  for(int i=0; i < block_data_size; ++i)
-    std::cout << std::hex << (int)blockData[i];
+  //for(int i=0; i < block_data_size; ++i)
+  //  std::cout << std::hex << (int)blockData[i];
 
-  std::cout << std::endl;
+  //std::cout << std::endl;
 
 
   host_module_env->AppendFuncExport(
@@ -158,7 +158,7 @@ void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* 
 
       uint8_t* mem_ptr = reinterpret_cast<uint8_t*>(&mem->data[ret_offset]);
       uint8_t* mem_ptr_end = reinterpret_cast<uint8_t*>(&mem->data[ret_offset+32]);
-      
+
       //printf("eth2_savePostStateRoot copying memory...\n");
 
       std::copy(mem_ptr, mem_ptr_end, postStateData);
@@ -170,7 +170,7 @@ void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* 
       for(int j = 0; j < 16; j++)
         sprintf(&buffer[2*j], "%02X", postStateData[j]);
 
-      std::cout << "eth2_savePostStateRoot: " << std::hex << buffer << std::endl;
+      //std::cout << "eth2_savePostStateRoot: " << std::hex << buffer << std::endl;
 
 
       return interp::Result::Ok;
