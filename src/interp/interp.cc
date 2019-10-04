@@ -267,7 +267,7 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
       uint64_t c=0;
       for (int i=0; i<5;i++){
         uint64_t temp = out[i]-m[i]-c;
-        if (out[i]>=m[i]+c)
+        if (out[i]>=m[i])
           c=0;
         else
           c=1;
@@ -2909,15 +2909,15 @@ Result Thread::Run(int num_instructions) {
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        intx::uint256* a_intx = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b_intx = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        //intx::uint256* a_intx = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
+        //intx::uint256* b_intx = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
 
-        std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
+        //std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
 
         montgomery_multiplication_256(a, b, mod, inv, ret);
 
-        intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-        std::cout << "Ewasmf1mMul.  return:" << intx::to_string(*ret_intx) << std::endl;
+        //intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        //std::cout << "Ewasmf1mMul.  return:" << intx::to_string(*ret_intx) << std::endl;
 
         break;
       }
