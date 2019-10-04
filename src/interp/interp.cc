@@ -2727,12 +2727,12 @@ Result Thread::Run(int num_instructions) {
         intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
         intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
 
-        *ret_mem = *a - *b;
-
         uint32_t carry = 0;
-        if (*ret_mem > *a || *ret_mem > *b) {
+        if (*a < *b) {
           carry = 1;
         }
+
+        *ret_mem = *a - *b;
 
         Push<uint32_t>(carry);
 
