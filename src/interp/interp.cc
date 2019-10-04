@@ -175,11 +175,13 @@ void mulmodmont_non_interleaved(intx::uint256* a, intx::uint256* b, intx::uint25
   auto k0 = (uint512{*inv} * res1).lo & mask128;
   auto res2 = ((uint512{k0} * uint512{*mod}) + res1) >> 128;
   auto k1 = (res2 * uint512{*inv}).lo & mask128;
-  auto result = ((uint512{k1} * uint512{*mod}) + res2) >> 128;
+  auto result = ((uint512{k1} * uint512{*mod}) + res2) >> 128; // correct version
+  //auto result = (((uint512{k1} * uint512{*mod}) + res2) >> 128).lo; // buggy version
   if (result >= *mod) {
     result = result - *mod;
   }
-  *out = result.lo;
+  *out = result.lo; // correct version
+  //*out = result; // buggy version
 }
 
 
@@ -2790,7 +2792,6 @@ Result Thread::Run(int num_instructions) {
 
 
 
-      /*
       case Opcode::Ewasmf1mSquare: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2828,7 +2829,6 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
-      */
 
 
       /*
@@ -2869,6 +2869,7 @@ Result Thread::Run(int num_instructions) {
       */
 
 
+      /*
       case Opcode::Ewasmf1mSquare: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2910,7 +2911,7 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
-
+      */
 
 
       case Opcode::Ewasmf1mFromMont: {
