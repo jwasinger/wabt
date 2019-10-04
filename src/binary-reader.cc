@@ -34,6 +34,11 @@
 #include "src/stream.h"
 #include "src/utf8.h"
 
+#include <chrono>
+#include <iostream>
+
+using chrono_clock = std::chrono::high_resolution_clock;
+
 #if HAVE_ALLOCA
 #include <alloca.h>
 #endif
@@ -59,6 +64,10 @@
 #define CALLBACK(member, ...)                             \
   ERROR_UNLESS(Succeeded(delegate_->member(__VA_ARGS__)), \
                #member " callback failed")
+
+ constexpr auto to_us = [](chrono_clock::duration d) {
+		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+	};
 
 namespace wabt {
 
@@ -739,6 +748,18 @@ Result BinaryReader::ReadFunctionBody(Offset end_offset) {
       }
       */
 
+
+      /***
+      * this "i64binop super-instruction" parsing code has a bug in it.
+      * it works for a lot of wasm functions, but not all. not sure what the bug is.
+      * for bignum heavy wasm functions, the speedup isn't that big
+      *
+      * TODO: implement same "super-instruction" optimization when parsing
+      * `(call bignum_func (i32.get_local) (i32.const) (i32.const))` and similar patterns
+      *
+      * since this is buggy and the speedup is small for bignum-heavy stuff, it is commented out for now.
+
+
       if (opcode_back.GetCode() >= 0x7c && opcode_back.GetCode() <= 0x8a) {
         // I64BinOp
 
@@ -802,12 +823,12 @@ Result BinaryReader::ReadFunctionBody(Offset end_offset) {
             CHECK_RESULT(ReadIndex(&local_index, "local.get local index"));
             //printf("got index1: %lu\n", local_index);
 
-            /*
-            uint64_t value;
-            CHECK_RESULT(ReadS64Leb128(&value, "i64.const value"));
-            CALLBACK(OnI64ConstExpr, value);
-            CALLBACK(OnOpcodeUint64, value);
-            */
+
+            //uint64_t value;
+            //CHECK_RESULT(ReadS64Leb128(&value, "i64.const value"));
+            //CALLBACK(OnI64ConstExpr, value);
+            //CALLBACK(OnOpcodeUint64, value);
+
 
             // advance over i64const opcode
             state_.offset +=1;
@@ -853,12 +874,12 @@ Result BinaryReader::ReadFunctionBody(Offset end_offset) {
 
             // now process the I64const
 
-            /*
-            uint64_t value;
-            CHECK_RESULT(ReadS64Leb128(&value, "i64.const value"));
-            CALLBACK(OnI64ConstExpr, value);
-            CALLBACK(OnOpcodeUint64, value);
-            */
+
+            //uint64_t value;
+            //CHECK_RESULT(ReadS64Leb128(&value, "i64.const value"));
+            //CALLBACK(OnI64ConstExpr, value);
+            //CALLBACK(OnOpcodeUint64, value);
+
 
             // advance over i64const opcode
             state_.offset +=1;
@@ -892,28 +913,8 @@ Result BinaryReader::ReadFunctionBody(Offset end_offset) {
             //printf("got Const,LocalGet,I64BinOp!!\n");
           }
       }
-
-
-      /*
-      if (opcode_back.GetCode() >= 0x6a && opcode_back.GetCode() <= 0x78) {
-        // I32BinOp
-        if (peekOpcodes[1] == Opcode::LocalGet && peekOpcodes[0] == Opcode::LocalGet) {
-            //printf("got Two LocalGets followed by I32BinOp!!\n");
-            
-          }
-
-          // LocalGet,Const,Binop is by far the most numerous
-          if ( (peekOpcodes[1] == Opcode::I64Const || peekOpcodes[1] == Opcode::I32Const) && peekOpcodes[0] == Opcode::LocalGet) {
-            //printf("got LocalGet,Const,I32Binop!!\n");
-
-            // LocalGetI32ConstI32BinOp
-          }
-
-          if ( (peekOpcodes[0] == Opcode::I64Const || peekOpcodes[0] == Opcode::I32Const) && peekOpcodes[1] == Opcode::LocalGet) {
-            //printf("got Const,LocalGet,I32BinOp!!\n");
-          }
-      }
       */
+
 
        if (opcode_back.GetCode() >= 0x6a && opcode_back.GetCode() <= 0x78) {
         // I32BinOp
@@ -3347,6 +3348,7 @@ Result BinaryReader::ReadFunctionSection(Offset section_size) {
 }
 
 Result BinaryReader::ReadTableSection(Offset section_size) {
+  const auto parseStartTime = chrono_clock::now();
   CALLBACK(BeginTableSection, section_size);
   CHECK_RESULT(ReadCount(&num_tables_, "table count"));
   if (!options_.features.reference_types_enabled()) {
@@ -3362,10 +3364,14 @@ Result BinaryReader::ReadTableSection(Offset section_size) {
     CALLBACK(OnTable, table_index, elem_type, &elem_limits);
   }
   CALLBACK0(EndTableSection);
+  const auto now = chrono_clock::now();
+  const auto parseDuration = now - parseStartTime;
+  std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
   return Result::Ok;
 }
 
 Result BinaryReader::ReadMemorySection(Offset section_size) {
+  const auto parseStartTime = chrono_clock::now();
   CALLBACK(BeginMemorySection, section_size);
   CHECK_RESULT(ReadCount(&num_memories_, "memory count"));
   ERROR_UNLESS(num_memories_ <= 1, "memory count must be 0 or 1");
@@ -3376,7 +3382,11 @@ Result BinaryReader::ReadMemorySection(Offset section_size) {
     CHECK_RESULT(ReadMemory(&page_limits));
     CALLBACK(OnMemory, memory_index, &page_limits);
   }
+  const auto now = chrono_clock::now();
+  const auto parseDuration = now - parseStartTime;
+  std::cout << "ReadMemorySection time: " << std::dec << to_us(parseDuration) << "us\n";
   CALLBACK0(EndMemorySection);
+
   return Result::Ok;
 }
 

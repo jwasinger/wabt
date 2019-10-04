@@ -1327,39 +1327,30 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
   if (func->is_host) {
-    // TODO: convert func_index to function name
     //printf("decoding call to host function..\n");
     HostFunc * host_func = cast<HostFunc>(func);
     //printf("host_func->module_name: %s\n", host_func->module_name.c_str());
     //printf("host_func->field_name: %s\n", host_func->field_name.c_str());
     auto func_name = host_func->field_name;
 
-    //if (func_index == 0) {
-    if (func_name == "addmod256") {
-      // addmod256
-      //printf("decoding call to addmod256 as an opcode...\n");
+    if (func_name == "bignum_f1m_add") {
       CHECK_RESULT(EmitOpcode(Opcode::EwasmAddMod));
-    } else if (func_name == "submod256") {
-      // submod256
-      //printf("decoding call to submod256 as an opcode...\n");
+    } else if (func_name == "bignum_f1m_sub") {
       CHECK_RESULT(EmitOpcode(Opcode::EwasmSubMod));
-    } else if (func_name == "mulmodmont256") {
-      // mulmodmont
-      //printf("decoding call to mulmodmont256 as an opcode...\n");
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmMulModMont));
-    } else if (func_name == "addmodbn") {
-      //printf("decoding call to addmodbn as an opcode...\n");
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmAddModBn));
-    } else if (func_name == "submodbn") {
-      //printf("decoding call to submodbn as an opcode...\n");
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmSubModBn));
-    } else if (func_name == "mulmodmontbn") {
-      //printf("decoding call to mulmodmontbn as an opcode...\n");
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmMulModMontBn));
-
+    } else if (func_name == "bignum_f1m_mul") {
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mMul));
+    } else if (func_name == "bignum_f1m_square") {
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mSquare));
+    } else if (func_name == "bignum_int_mul") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmMul256));
+    } else if (func_name == "bignum_int_add") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmAdd256));
+    } else if (func_name == "bignum_int_sub") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmSub256));
+    } else if (func_name == "bignum_int_div") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmDiv256));
     } else {
       // all other host functions
-      //printf("decoding call to setBignumStack. func_index: %d\n", func_index);
       CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
       CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
     }

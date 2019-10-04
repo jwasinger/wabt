@@ -173,8 +173,9 @@ static interp::Result PrintCallback(const HostFunc* func,
   return interp::Result::Ok;
 }
 
+// TODO: this is duplicated in benchmark-interp.cc
 // function not implemented here, just need a stub so the import is valid
-// the implementation is in interp.cc under `case Opcode::EwasmCall`
+// the implementation is in interp.cc under `case Opcode::EwasmOpcodeName`
 static interp::Result EwasmHostFunc(const HostFunc* func,
                                     const interp::FuncSignature* sig,
                                     const TypedValues& args,
@@ -182,35 +183,6 @@ static interp::Result EwasmHostFunc(const HostFunc* func,
   return interp::Result::Ok;
 }
 
-static interp::Result EwasmAddMod(const HostFunc* func,
-                                    const interp::FuncSignature* sig,
-                                    const TypedValues& args,
-                                    TypedValues& results) {
-  return interp::Result::Ok;
-}
-
-static interp::Result EwasmSubMod(const HostFunc* func,
-                                    const interp::FuncSignature* sig,
-                                    const TypedValues& args,
-                                    TypedValues& results) {
-  return interp::Result::Ok;
-}
-
-static interp::Result EwasMulModMont(const HostFunc* func,
-                                    const interp::FuncSignature* sig,
-                                    const TypedValues& args,
-                                    TypedValues& results) {
-  return interp::Result::Ok;
-}
-
-
-static interp::Result EthereumFinish(const HostFunc* func,
-                                    const interp::FuncSignature* sig,
-                                    const TypedValues& args,
-                                    TypedValues& results) {
-  //printf("EthereumFinish");
-  return interp::Result::Ok;
-}
 
 static void InitEnvironment(Environment* env) {
   if (s_host_print) {
@@ -228,78 +200,22 @@ static void InitEnvironment(Environment* env) {
     };
   }
 
-  // this is just here so the import is valid
-  HostModule* host_module_ewasm = env->AppendHostModule("ewasm");
-  //host_module_ewasm->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
-  //host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
-  //host_module_debug->AppendFuncExport("ewasmHostFunc", {{}, {}}, EwasmHostFunc);
-
-  //host_module_ewasm->AppendFuncExport("addmod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmAddMod);
-  //host_module_ewasm->AppendFuncExport("submod256", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmSubMod);
-  //host_module_ewasm->AppendFuncExport("mulmodmont256", {{Type::I32, Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasMulModMont);
-
-  host_module_ewasm->AppendFuncExport("addmodbn", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmAddMod);
-  host_module_ewasm->AppendFuncExport("submodbn", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmSubMod);
-  host_module_ewasm->AppendFuncExport("mulmodmontbn", {{Type::I32, Type::I32, Type::I32}, {}}, EwasMulModMont);
-
-  /*
-  host_module_ewasm->AppendFuncExport("addmodbn", {{Type::I32, Type::I32}, {Type::I32}}, EwasmAddMod);
-  host_module_ewasm->AppendFuncExport("submodbn", {{Type::I32, Type::I32}, {Type::I32}}, EwasmSubMod);
-  host_module_ewasm->AppendFuncExport("mulmodmontbn", {{Type::I32, Type::I32}, {Type::I32}}, EwasMulModMont);
-  */
-
-  //host_module_ewasm->AppendFuncExport("debugPrint", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmDebugPrint);
-
-  host_module_ewasm->AppendFuncExport(
-    "debugPrint",
-    {{Type::I32, Type::I32, Type::I32}, {}},
-    [&env](
-      const interp::HostFunc*,
-      const interp::FuncSignature*,
-      const interp::TypedValues& args,
-      interp::TypedValues&
-    ) {
-      printf("EwasmDebugPrint. \n");
-      env->PrintBignumStack(args[0].value.i32, args[1].value.i32, args[2].value.i32);
-      return interp::Result::Ok;
-    }
-  );
-
-
-  host_module_ewasm->AppendFuncExport(
-    "setBignumStack",
-    {{Type::I32}, {}},
-    [&env](
-      const interp::HostFunc*,
-      const interp::FuncSignature*,
-      const interp::TypedValues& args,
-      interp::TypedValues&
-    ) {
-      //interface.mulmodmont256(args[0].value.i32, args[1].value.i32, args[2].value.i32, args[3].value.i32, args[4].value.i32);
-      env->SetBignumStack(args[0].value.i32);
-      return interp::Result::Ok;
-    }
-  );
-
-
-
-  HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
-  host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);
-  
-  
-  
-
-  /*
-  host_module_env->AppendFuncExport("eth2_blockDataSize", {{}, {Type::I32}}, Eth2BlockDataSize);
-  host_module_env->AppendFuncExport("eth2_blockDataCopy", {{Type::I32, Type::I32, Type::I32}, {}}, Eth2BlockDataCopy);
-  host_module_env->AppendFuncExport("eth2_loadPreStateRoot", {{Type::I32}, {}}, Eth2LoadPreStateRoot);
-  host_module_env->AppendFuncExport("eth2_savePostStateRoot", {{Type::I32}, {}}, Eth2SavePostStateRoot);
-  */
 
   HostModule* host_module_env = env->AppendHostModule("env");
 
-  AppendScoutFuncs(env, host_module_env);
+  // this are here only to make the imports validate
+  host_module_env->AppendFuncExport("bignum_f1m_mul", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_square", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_add", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_sub", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_mul", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_add", {{Type::I32, Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_sub", {{Type::I32, Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_div", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
 
+  // the scout functions aren't implemented using the "parse call to host func as an opcode"
+  // optimization that we use for the bignum host functions. so they're handled in scout.h
+  AppendScoutFuncs(env, host_module_env);
 }
 
 
@@ -331,30 +247,37 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
     Executor executor(&env, s_trace_stream, s_thread_options);
     //RunAllExports(module, &executor, RunVerbosity::Verbose);
 
-    TypedValues args;
-    interp::Export* main_ = module->GetExport("main");
-    ExecResult exec_result = executor.RunExport(main_, args);
+    ExecResult start_result = executor.RunStartFunction(module);
+    if (start_result.result == interp::Result::Ok) {
 
-    const auto execFinishTime = chrono_clock::now();
-    const auto execDuration = execFinishTime - execStartTime;
-    std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
-    std::cout << "exec time: " << std::dec << to_us(execDuration) << "us\n";
+      TypedValues args;
+      interp::Export* main_ = module->GetExport("main");
+      ExecResult exec_result = executor.RunExport(main_, args);
 
-    /*
-    ExecResult exec_result = executor.RunStartFunction(module);
-    if (exec_result.result == interp::Result::Ok) {
-      if (s_run_all_exports) {
-        RunAllExports(module, &executor, RunVerbosity::Verbose);
-        const auto execFinishTime = chrono_clock::now();
-        const auto execDuration = execFinishTime - execStartTime;
-        std::cout << "parse time: " << to_us(parseDuration) << "us\n";
-        std::cout << "exec time: " << to_us(execDuration) << "us\n";
+      const auto execFinishTime = chrono_clock::now();
+      const auto execDuration = execFinishTime - execStartTime;
+      std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
+      std::cout << "exec time: " << std::dec << to_us(execDuration) << "us\n";
+
+      /*
+      ExecResult exec_result = executor.RunStartFunction(module);
+      if (exec_result.result == interp::Result::Ok) {
+        if (s_run_all_exports) {
+          RunAllExports(module, &executor, RunVerbosity::Verbose);
+          const auto execFinishTime = chrono_clock::now();
+          const auto execDuration = execFinishTime - execStartTime;
+          std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+          std::cout << "exec time: " << to_us(execDuration) << "us\n";
+        }
+      } else {
+        WriteResult(s_stdout_stream.get(), "error running start function",
+                    exec_result.result);
       }
+      */
     } else {
       WriteResult(s_stdout_stream.get(), "error running start function",
-                  exec_result.result);
+                  start_result.result);
     }
-    */
   }
   return result;
 }
