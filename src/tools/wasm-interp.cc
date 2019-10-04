@@ -208,6 +208,8 @@ static void InitEnvironment(Environment* env) {
   host_module_env->AppendFuncExport("bignum_f1m_square", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
   host_module_env->AppendFuncExport("bignum_f1m_add", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
   host_module_env->AppendFuncExport("bignum_f1m_sub", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_toMontgomery", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_fromMontgomery", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
   host_module_env->AppendFuncExport("bignum_int_mul", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
   host_module_env->AppendFuncExport("bignum_int_add", {{Type::I32, Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
   host_module_env->AppendFuncExport("bignum_int_sub", {{Type::I32, Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
