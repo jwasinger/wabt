@@ -155,7 +155,7 @@ void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* 
       for(int j = 0; j < 16; j++)
         sprintf(&buffer[2*j], "%02X", postStateData[j]);
 
-      //std::cout << "eth2_savePostStateRoot: " << std::hex << buffer << std::endl;
+      std::cout << "eth2_savePostStateRoot: " << std::hex << buffer << std::endl;
 
 
       return interp::Result::Ok;

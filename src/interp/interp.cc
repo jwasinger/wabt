@@ -2682,9 +2682,11 @@ Result Thread::Run(int num_instructions) {
         Memory* mem = &env_->memories_[0];
         intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
         intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint256* ret_remainder_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint256* ret_quotient_mem = reinterpret_cast<intx::uint256*>(&(mem->data[c_offset]));
 
-        *ret_mem = *a / *b;
+        *ret_remainder_mem = *a % *b;
+        *ret_quotient_mem = *a / *b;
 
         break;
       }
@@ -2699,10 +2701,18 @@ Result Thread::Run(int num_instructions) {
         intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
         intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
 
-        *ret_mem = *a + *b;
+        //*ret_mem = *a + *b;
 
-        // TODO: return correct thing
-        Push<uint32_t>(0);
+        const auto add_res = add_with_carry(*a, *b);
+
+        *ret_mem = std::get<0>(add_res);
+
+        uint32_t carry = 0;
+        if (std::get<1>(add_res) > 0) {
+          carry = 1;
+        }
+
+        Push<uint32_t>(carry);
 
         break;
       }
@@ -2719,8 +2729,12 @@ Result Thread::Run(int num_instructions) {
 
         *ret_mem = *a - *b;
 
-        // TODO: return correct thing
-        Push<uint32_t>(0);
+        uint32_t carry = 0;
+        if (*ret_mem > *a || *ret_mem > *b) {
+          carry = 1;
+        }
+
+        Push<uint32_t>(carry);
 
         break;
       }
