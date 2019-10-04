@@ -125,43 +125,6 @@ intx::uint256 BignumInv = intx::from_string<intx::uint256>("25081982212480377058
 intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("18446752466076602529");
 intx::uint256 BignumOne = intx::from_string<intx::uint256>("1");
 
-uint32_t GetBignumStackMemOffset(uint32_t bignum_stack_index) {
-  return (BignumMemOffset + (bignum_stack_index * 32));
-}
-
-void incrementBignumStack() {
-  wabt::interp::BignumStackIndex = wabt::interp::BignumStackIndex + 1;
-  if (wabt::interp::BignumStackIndex >= wabt::interp::BignumStackLimit) {
-    wabt::interp::BignumStackIndex = 0;
-  }
-  //printf("incrementBignumStack. new index: %d\n", wabt::interp::BignumStackIndex);
-}
-
-void Environment::SetBignumStack(uint32_t mem_offset) {
-  //printf("SetBignumStack. mem_offset: %d\n", mem_offset);
-  BignumMemOffset = mem_offset;
-
-  EwasmMem = &memories_[0];
-
-  for (uint32_t i=0; i < BignumStackLimit; i++) {
-    BignumStack[i] = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[mem_offset + (i*32)]));
-    
-    //std::cout << "SetBignumStack. index i: " << i << "  wasm mem address: " <<  ((void *) &(EwasmMem->data[mem_offset + (i*32)])) << std::endl;
-  }
-
-}
-
-void Environment::PrintBignumStack(uint32_t a_offset, uint32_t b_offset, uint32_t c_offset) {
-  // printf("PrintBignumStack...\n");
-
-  //std::cout << "PrintBignumStack.  a_offset: " << a_offset << "  b_offset: " << b_offset << "  c_offset: " << c_offset << std::endl;
-
-  intx::uint256* a = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[a_offset]));
-  intx::uint256* b = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[b_offset]));
-  intx::uint256* c = reinterpret_cast<intx::uint256*>(&(EwasmMem->data[c_offset]));
-  std::cout << "PrintBignumStack.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << "  c:" << intx::to_string(*c) << std::endl;
-}
-
 
 typedef unsigned __int128 uint128_t;
 
@@ -240,7 +203,6 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
    // final subtraction, first see if necessary
    // this out <= m check is untested
    int out_ge_m = 1;
-   //int out_ge_m = 0;
 
    /*
    for (int i=0;i<4;i++){
@@ -261,7 +223,6 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
    }
 
    if (out_ge_m){
-      printf("got a num > mod!!\n");
       // subtract 256 for x>=y, this is algorithm 14.9
       // this subtraction is untested
       uint64_t c=0;
