@@ -185,7 +185,7 @@ void mulmodmont_non_interleaved(intx::uint256* a, intx::uint256* b, intx::uint25
 }
 
 
-void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, uint64_t* out){
+void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, uint64_t* outOffset){
   //std::cout << "montgomery_multiplication_256 start." << std::endl;
 
   /*
@@ -201,7 +201,8 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
   bignum_f1m_mul result: 69893535275158612601170039474066728529369442559750929171468405475141618310794
   */
 
-   uint64_t A[] = {0,0,0,0,0,0,0,0};
+   //uint64_t A[] = {0,0,0,0,0,0,0,0};
+   uint64_t A[] = {0,0,0,0,0,0,0,0,0};
    for (int i=0; i<4; i++){
      uint64_t ui = (A[i]+x[i]*y[0])*inv[0];
      uint64_t carry = 0;
@@ -220,35 +221,51 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
            A[i+j+k]=0;
            k++;
          }
-         if (i+j+k<8)
+         if (i+j+k<9)
            A[i+j+k]+=1;
        }
      }
      A[i+4]+=carry;
    }
 
+   uint64_t out[] = {0,0,0,0,0};
+
    // instead of right shift, we just get the correct values
    out[0] = A[4];
    out[1] = A[5];
    out[2] = A[6];
    out[3] = A[7];
+   out[4] = A[8];
 
    // final subtraction, first see if necessary
    // this out <= m check is untested
    int out_ge_m = 1;
+   //int out_ge_m = 0;
+
+   /*
    for (int i=0;i<4;i++){
      if (out[4-i-1] < m[4-i-1]){
        out_ge_m=0;
        break;
+       //continue;
      }
      else if (out[4-i-1]>m[4-i-1])
        break;
    }
+   */
+
+   if (out[4] > 0) {
+     out_ge_m = 1;
+   } else {
+     out_ge_m = 0;
+   }
+
    if (out_ge_m){
+      printf("got a num > mod!!\n");
       // subtract 256 for x>=y, this is algorithm 14.9
       // this subtraction is untested
       uint64_t c=0;
-      for (int i=0; i<4;i++){
+      for (int i=0; i<5;i++){
         uint64_t temp = out[i]-m[i]-c;
         if (out[i]>=m[i]+c)
           c=0;
@@ -257,6 +274,12 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
         out[i]=temp;
       }
     }
+
+    outOffset[0] = out[0];
+    outOffset[1] = out[1];
+    outOffset[2] = out[2];
+    outOffset[3] = out[3];
+
     //std::cout << "montgomery_multiplication_256 end." << std::endl;
 }
 
@@ -2693,8 +2716,11 @@ Result Thread::Run(int num_instructions) {
         intx::uint256* ret_remainder_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
         intx::uint256* ret_quotient_mem = reinterpret_cast<intx::uint256*>(&(mem->data[c_offset]));
 
-        *ret_remainder_mem = *a % *b;
-        *ret_quotient_mem = *a / *b;
+        //*ret_remainder_mem = *a % *b;
+        //*ret_quotient_mem = *a / *b;
+        const auto div_res = udivrem(*a, *b);
+        *ret_quotient_mem = div_res.quot;
+        *ret_remainder_mem = div_res.rem;
 
         break;
       }
@@ -2886,10 +2912,12 @@ Result Thread::Run(int num_instructions) {
         intx::uint256* a_intx = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
         intx::uint256* b_intx = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
 
+        std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
+
         montgomery_multiplication_256(a, b, mod, inv, ret);
 
         intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-        //std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << "  return:" << intx::to_string(*ret_intx) << std::endl;
+        std::cout << "Ewasmf1mMul.  return:" << intx::to_string(*ret_intx) << std::endl;
 
         break;
       }
@@ -2910,6 +2938,7 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
+
 
 
       case Opcode::Ewasmf1mFromMont: {
