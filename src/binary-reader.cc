@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <iostream>
 
 #include "config.h"
 
@@ -2344,14 +2345,21 @@ Result BinaryReader::ReadModule() {
   uint32_t magic = 0;
   CHECK_RESULT(ReadU32(&magic, "magic"));
   ERROR_UNLESS(magic == WABT_BINARY_MAGIC, "bad magic value");
+  std::cout << "ReadModule: 1\n";
+
   uint32_t version = 0;
   CHECK_RESULT(ReadU32(&version, "version"));
   ERROR_UNLESS(version == WABT_BINARY_VERSION,
                "bad wasm file version: %#x (expected %#x)", version,
                WABT_BINARY_VERSION);
 
+  std::cout << "ReadModule: 2\n";
+
   CALLBACK(BeginModule, version);
   CHECK_RESULT(ReadSections());
+
+  std::cout << "ReadModule: 3\n";
+
   // This is checked in ReadCodeSection, but it must be checked at the end too,
   // in case the code section was omitted.
   ERROR_UNLESS(num_function_signatures_ == num_function_bodies_,
