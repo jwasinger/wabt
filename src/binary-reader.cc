@@ -2358,13 +2358,15 @@ Result BinaryReader::ReadModule() {
   CALLBACK(BeginModule, version);
   CHECK_RESULT(ReadSections());
 
-  std::cout << "ReadModule: 3\n";
+  std::cout << "ReadModule: 3.5\n";
 
   // This is checked in ReadCodeSection, but it must be checked at the end too,
   // in case the code section was omitted.
   ERROR_UNLESS(num_function_signatures_ == num_function_bodies_,
                "function signature count != function body count");
   CALLBACK0(EndModule);
+
+  std::cout << "ReadModule: 4\n";
 
   return Result::Ok;
 }
