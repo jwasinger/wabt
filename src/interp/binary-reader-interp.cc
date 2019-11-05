@@ -21,6 +21,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <vector>
+#include <iostream>
 
 #include "src/binary-reader-nop.h"
 #include "src/cast.h"
@@ -1847,12 +1848,14 @@ wabt::Result ReadBinaryInterp(Environment* env,
     if (Succeeded(result)) {
       *out_module = module;
     } else {
+      std::cout << "fail 1\n";
       // We failed to initialize data and element segments, but we can't reset
       // to the mark point. An element segment may have initialized an imported
       // table with a function from this module, which is still callable.
       *out_module = nullptr;
     }
   } else {
+    std::cout << "fail 2\n";
     env->ResetToMarkPoint(mark);
     *out_module = nullptr;
   }
