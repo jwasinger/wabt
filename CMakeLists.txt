@@ -270,6 +270,7 @@ add_library(intx STATIC
   third_party/intx/lib/intx/div.cpp
 )
 
+
 if (NOT EMSCRIPTEN)
   if (CODE_COVERAGE)
     add_definitions("-fprofile-arcs -ftest-coverage")
@@ -299,7 +300,10 @@ if (NOT EMSCRIPTEN)
     target_link_libraries(${EXE_NAME} ${EXE_LIBS})
     #target_link_libraries(${EXE_NAME} /usr/local/lib/libbenchmark.a)
     # target_link_libraries(${EXE_NAME} /usr/local/lib/libbenchmark.a /usr/local/Cellar/gperftools/2.7/lib/libprofiler.a)
-    target_link_libraries(${EXE_NAME} benchmark profiler)
+
+    # add_dependencies(${EXE_NAME} yaml-cpp)
+
+    target_link_libraries(${EXE_NAME} benchmark profiler /home/ewasm/projects/wabt-bignums/third_party/yaml-cpp/build/libyaml-cpp.a)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 17)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
@@ -416,6 +420,7 @@ if (NOT EMSCRIPTEN)
       third_party/gtest/googletest/include
       /usr/local/include
       third_party/intx/include
+      third_party/yaml-cpp/include
     )
 
     # gtest

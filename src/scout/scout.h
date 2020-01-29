@@ -1,6 +1,7 @@
 
 
 #include "src/interp/interp.h"
+#include "src/scout/yaml_loader.h"
 
 #include <memory>
 
@@ -54,6 +55,8 @@ using namespace wabt::interp;
 
 void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* host_module_env) {
 
+  std::string scout_yaml_file = "./mixer.yml";
+  auto scout_test_cases = load_scout_config(scout_yaml_file);
 
   // TODO: read block data from a scout yaml file
   std::ifstream blockDataFile{"./test_block_data.hex"};
