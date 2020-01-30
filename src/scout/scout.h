@@ -46,17 +46,44 @@ bytes from_hex(std::string_view hex)
     return bs;
 }
 
-
-
-
 using namespace wabt;
 using namespace wabt::interp;
 
+void print_as_hex(std::vector<uint8_t> &vec) {
+    for (auto i =0; i < vec.size(); i++) {
+        std::cout << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(vec[i]);
+    }
+
+    std::cout << std::dec << "(" << vec.size() << ")\n";
+}
 
 void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* host_module_env) {
 
   std::string scout_yaml_file = "./mixer.yml";
   auto scout_test_cases = load_scout_config(scout_yaml_file);
+
+  std::cout << "execution scripts\n";
+  for (auto i = 0; i < scout_test_cases.wasm_binaries.size(); i++) {
+      std::cout << scout_test_cases.wasm_binaries[i] << std::endl;
+  }
+
+  std::cout << "prestates:\n";
+  for (auto i = 0; i < scout_test_cases.pre_states.size(); i++) {
+      // std::cout << scout_test_cases.pre_states[i].second << std::endl;
+      print_as_hex(scout_test_cases.pre_states[i]);
+  }
+
+  std::cout << "shard blocks:\n";
+  for (auto i = 0; i < scout_test_cases.shard_blocks.size(); i++) {
+      auto shard_block = scout_test_cases.shard_blocks[i];
+      std::cout << "env: " << shard_block.first << "\ndata: ";
+      print_as_hex(shard_block.second);
+  }
+
+  std::cout << "post state:\n";
+  for (auto i = 0; i < scout_test_cases.post_states.size(); i++ ) {
+      print_as_hex(scout_test_cases.post_states[i]);
+  }
 
   // TODO: read block data from a scout yaml file
   std::ifstream blockDataFile{"./test_block_data.hex"};
@@ -94,6 +121,9 @@ void AppendScoutFuncs(wabt::interp::Environment* env, wabt::interp::HostModule* 
       interp::TypedValues& results
     ) {
       printf("debug_printMemHex mem_pos: %llu\n", args[0].value.i32);
+      wabt::interp::Memory* mem = env->GetMemory(0);
+      std::vector<uint8_t> mem_slice(std::begin(&mem->data), std::end(&mem->data + args[0].value.i32));
+      print_as_hex(mem_slice);
       return interp::Result::Ok;
     }
   );
