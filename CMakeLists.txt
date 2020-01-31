@@ -317,7 +317,6 @@ set(WABT_LIBRARY_SRC
   src/interp/interp-trace.cc
 )
 
-<<<<<<< HEAD
 add_library(wabt STATIC ${WABT_LIBRARY_SRC})
 
 # libwasm, which implenents the wasm C API
