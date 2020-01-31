@@ -118,7 +118,7 @@ else ()
     -Wuninitialized
   )
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wold-style-cast")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -Wold-style-cast")
 
   if (WERROR)
     add_definitions(-Werror)
@@ -317,6 +317,7 @@ set(WABT_LIBRARY_SRC
   src/interp/interp-trace.cc
 )
 
+<<<<<<< HEAD
 add_library(wabt STATIC ${WABT_LIBRARY_SRC})
 
 # libwasm, which implenents the wasm C API
@@ -330,6 +331,13 @@ else ()
   target_compile_definitions(wasm PRIVATE "WASM_API_EXTERN=__attribute__((visibility(\"default\")))")
 endif ()
 set_target_properties(wasm PROPERTIES CXX_VISIBILITY_PRESET hidden)
+add_library(intx STATIC
+  third_party/intx/lib/intx/div.cpp
+)
+
+include_directories(
+  third_party/intx/include
+)
 
 if (NOT EMSCRIPTEN)
   if (CODE_COVERAGE)
@@ -346,6 +354,9 @@ if (NOT EMSCRIPTEN)
 
     # Always link libwabt.
     set(EXE_LIBS "${EXE_LIBS};wabt")
+
+    # link intx
+    set(EXE_LIBS "${EXE_LIBS};intx")
 
     # Optionally link libm.
     if (EXE_WITH_LIBM AND (COMPILER_IS_CLANG OR COMPILER_IS_GNU))
@@ -582,6 +593,7 @@ if (NOT EMSCRIPTEN)
       c_api_example(threads)
     endif ()
   endif ()
+
 
   # install
   if (BUILD_TOOLS OR BUILD_TESTS)

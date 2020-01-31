@@ -1539,9 +1539,33 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   FuncSignature* sig = env_->GetFuncSignature(func->sig_index);
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
+  HostFunc * host_func = cast<HostFunc>(func);
   if (func->is_host) {
-    CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
-    CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
+    auto func_name = host_func->field_name;
+    if (func_name == "bignum_f1m_add") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmAddMod));
+    } else if (func_name == "bignum_f1m_sub") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmSubMod));
+    } else if (func_name == "bignum_f1m_mul") {
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mMul));
+    } else if (func_name == "bignum_f1m_square") {
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mSquare));
+    } else if (func_name == "bignum_f1m_fromMontgomery") {
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mFromMont));
+    } else if (func_name == "bignum_f1m_toMontgomery") {
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mToMont));
+    } else if (func_name == "bignum_int_mul") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmMul256));
+    } else if (func_name == "bignum_int_add") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmAdd256));
+    } else if (func_name == "bignum_int_sub") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmSub256));
+    } else if (func_name == "bignum_int_div") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmDiv256));
+    } else {
+      CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
+      CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));
+    }
   } else {
     CHECK_RESULT(EmitOpcode(Opcode::Call));
     CHECK_RESULT(EmitFuncOffset(cast<DefinedFunc>(func), func_index));
