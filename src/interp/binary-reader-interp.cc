@@ -1539,8 +1539,8 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
   FuncSignature* sig = env_->GetFuncSignature(func->sig_index);
   CHECK_RESULT(typechecker_.OnCall(sig->param_types, sig->result_types));
 
-  HostFunc * host_func = cast<HostFunc>(func);
   if (func->is_host) {
+    HostFunc * host_func = cast<HostFunc>(func);
     auto func_name = host_func->field_name;
     if (func_name == "bignum_f1m_add") {
       CHECK_RESULT(EmitOpcode(Opcode::EwasmAddMod));
