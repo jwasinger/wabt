@@ -18,6 +18,9 @@
 
 #include <intx/intx.hpp>
 
+#include <iostream>
+#include <iomanip>
+
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
@@ -34,6 +37,16 @@
 
 namespace wabt {
 namespace interp {
+
+std::string format_u256_hex(uint8_t *offset) {
+    std::stringstream ss; 
+    ss << std::hex;
+    for (auto i = 0; i < 32; i++ ) { 
+        ss << std::setw(2) << std::setfill('0') << static_cast<int>(*(offset + i));
+    }   
+
+    return ss.str();
+}
 
 // Differs from the normal CHECK_RESULT because this one is meant to return the
 // interp Result type.
@@ -129,17 +142,21 @@ void WriteTypedValues(Stream* stream, const TypedValues& values) {
 }
 
 // for bn128
-//intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
-//intx::uint256 BignumInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
+intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
+// intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+
+intx::uint256 BignumInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
 
 
 // for secp256k1
 // modulus = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
 // inv = 0xbcb223fedc24a059d838091dd2253531
 // r_squared = 0x1000007a2000e90a1
-intx::uint256 BignumModulus = intx::from_string<intx::uint256>("115792089237316195423570985008687907853269984665640564039457584007908834671663");
-intx::uint256 BignumInv = intx::from_string<intx::uint256>("250819822124803770581580479000962479409");
-intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("18446752466076602529");
+// intx::uint256 BignumModulus = intx::from_string<intx::uint256>("115792089237316195423570985008687907853269984665640564039457584007908834671663");
+// intx::uint256 BignumInv = intx::from_string<intx::uint256>("250819822124803770581580479000962479409");
+
+// intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("18446752466076602529");
+intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
 intx::uint256 BignumOne = intx::from_string<intx::uint256>("1");
 
 
@@ -2648,6 +2665,7 @@ Result Thread::Run(int num_instructions) {
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
+		// std::cout << "f1m_toMontgomery\na :" << format_u256_hex((uint8_t *)a) << "\nr squared: " << format_u256_hex((uint8_t *)b) << "\n modulus: " << format_u256_hex((uint8_t *)mod) << "\ninverse: " << format_u256_hex((uint8_t *)inv) << "\n";
         montgomery_multiplication_256(a, b, mod, inv, ret);
 
         break;
