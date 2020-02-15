@@ -274,7 +274,10 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
     outOffset[2] = out[2];
     outOffset[3] = out[3];
 
-    //std::cout << "montgomery_multiplication_256 end." << std::endl;
+    intx::uint256 *output = reinterpret_cast<intx::uint256*>(outOffset);
+    if (*output > wabt::interp::BignumModulus) {
+        *output -= wabt::interp::BignumModulus;
+    }
 }
 
 
@@ -2467,12 +2470,17 @@ Result Thread::Run(int num_instructions) {
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
+
         Memory* mem = &env_->memories_[0];
         intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
         intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
         intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
 
         *ret_mem = *a * *b;
+
+        std::cout << "mul256\na:" << format_u256_hex((uint8_t *)a) << std::endl;
+        std::cout << "\nb:" << format_u256_hex((uint8_t *)b) << std::endl;
+        std::cout << "\nresult: " << format_u256_hex((uint8_t *)ret_mem) << std::endl;
 
         break;
       }
@@ -2513,6 +2521,10 @@ Result Thread::Run(int num_instructions) {
         const auto add_res = add_with_carry(*a, *b);
 
         *ret_mem = std::get<0>(add_res);
+
+        std::cout << "add256\na:" << format_u256_hex((uint8_t *)a) << std::endl;
+        std::cout << "\nb:" << format_u256_hex((uint8_t *)b) << std::endl;
+        std::cout << "\nresult: " << format_u256_hex((uint8_t *)ret_mem) << std::endl;
 
         uint32_t carry = 0;
         if (std::get<1>(add_res) > 0) {
@@ -2627,6 +2639,7 @@ Result Thread::Run(int num_instructions) {
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
+        std::cout << "square\n";
         montgomery_multiplication_256(a, a, mod, inv, ret);
 
         break;
