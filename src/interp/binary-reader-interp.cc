@@ -1562,6 +1562,18 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
       CHECK_RESULT(EmitOpcode(Opcode::EwasmSub256));
     } else if (func_name == "bignum_int_div") {
       CHECK_RESULT(EmitOpcode(Opcode::EwasmDiv256));
+    } else if (func_name == "bignum_frm_toMontgomery") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmFrToMont));
+    } else if (func_name == "bignum_frm_fromMontgomery") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmFrFromMont));
+    } else if (func_name == "bignum_frm_add") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmFrAdd));
+    } else if (func_name == "bignum_frm_sub") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmFrSub));
+    } else if (func_name == "bignum_frm_mul") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmFrMul));
+    } else if (func_name == "bignum_frm_square") {
+      CHECK_RESULT(EmitOpcode(Opcode::EwasmFrSquare));
     } else {
       CHECK_RESULT(EmitOpcode(Opcode::InterpCallHost));
       CHECK_RESULT(EmitI32(TranslateFuncIndexToEnv(func_index)));

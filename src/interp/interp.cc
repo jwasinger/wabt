@@ -141,24 +141,16 @@ void WriteTypedValues(Stream* stream, const TypedValues& values) {
   }
 }
 
-// for bn128
-intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
-// intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+// bn128
+intx::uint256 FqModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
+intx::uint256 FqInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
+intx::uint256 FqRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
 
-intx::uint256 BignumInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
+intx::uint256 FrModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
+intx::uint256 FrInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
+intx::uint256 FrRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
 
-
-// for secp256k1
-// modulus = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
-// inv = 0xbcb223fedc24a059d838091dd2253531
-// r_squared = 0x1000007a2000e90a1
-// intx::uint256 BignumModulus = intx::from_string<intx::uint256>("115792089237316195423570985008687907853269984665640564039457584007908834671663");
-// intx::uint256 BignumInv = intx::from_string<intx::uint256>("250819822124803770581580479000962479409");
-
-// intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("18446752466076602529");
-intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
 intx::uint256 BignumOne = intx::from_string<intx::uint256>("1");
-
 
 typedef unsigned __int128 uint128_t;
 
@@ -2505,7 +2497,6 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
-
       case Opcode::EwasmAdd256: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
@@ -2683,7 +2674,18 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
-
+      case Opcode::EwasmFrToMont:
+        break;
+      case Opcode::EwasmFrFromMont:
+        break;
+      case Opcode::EwasmFrAdd:
+        break;
+      case Opcode::EwasmFrSub:
+        break;
+      case Opcode::EwasmFrMul:
+        break;
+      case Opcode::EwasmFrSquare:
+        break;
       case Opcode::I64DivS:
         CHECK_TRAP(BinopTrap(IntDivS<int64_t>));
         break;

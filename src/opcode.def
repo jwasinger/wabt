@@ -231,6 +231,8 @@ WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe3, InterpData, "data", "")
 WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe4, InterpDropKeep, "drop_keep", "")
 
 /* ewasm bignum "host" function opcodes */
+
+/* Fq */
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmMul256, "ewasm_mul256", "")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe6, EwasmAdd256, "ewasm_add256", "")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe7, EwasmSub256, "ewasm_sub256", "")
@@ -241,6 +243,14 @@ WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xea, EwasmSubMod, "ewasm_submod",
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xeb, Ewasmf1mMul, "ewasm_f1m_mul", "")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xeb, Ewasmf1mFromMont, "ewasm_f1m_toMontgomery", "")
 WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xeb, Ewasmf1mToMont, "ewasm_f1m_fromMontgomery", "")
+
+/* Fr*/
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xec, EwasmFrSquare, "ewasm_frm_square", "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xed, EwasmFrAdd, "ewasm_frm_add", "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xef, EwasmFrSub, "ewasm_frm_sub", "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xf0, EwasmFrMul, "ewasm_frm_mul", "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xf1, EwasmFrToMont, "ewasm_frm_toMontgomery", "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xf2, EwasmFrFromMont, "ewasm_frm_fromMontgomery", "")
 
 /* Saturating float-to-int opcodes (--enable-saturating-float-to-int) */
 WABT_OPCODE(I32,  F32,  ___,  ___,  0,  0xfc, 0x00, I32TruncSatF32S, "i32.trunc_sat_f32_s", "")
