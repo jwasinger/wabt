@@ -180,6 +180,59 @@ void mulmodmont_non_interleaved(intx::uint256* a, intx::uint256* b, intx::uint25
   //*out = result; // buggy version
 }
 
+// algorithm 14.36, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
+void montmul256_64bitlimbs(uint64_t* const x, uint64_t* const y, uint64_t* const m, uint64_t* const inv, uint64_t *out){
+  uint64_t A[256/64*2] = {0};
+  for (int i=0; i<256/64; i++){
+    uint64_t ui = (A[i]+x[i]*y[0])*inv[0];
+    uint64_t carry = 0;
+#pragma unroll
+    for (int j=0; j<256/64; j++){
+      __uint128_t xiyj = (__uint128_t)x[i]*y[j];
+      __uint128_t uimj = (__uint128_t)ui*m[j];
+      __uint128_t partial_sum = xiyj+carry+A[i+j];
+      __uint128_t sum = uimj+partial_sum;
+      A[i+j] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+j+k<256/64*2 && A[i+j+k]==(uint64_t)0-1 ){
+          A[i+j+k]=0;
+          k++;
+        }
+        if (i+j+k<256/64*2)
+          A[i+j+k]+=1;
+      }
+
+    }
+    A[i+256/64]+=carry;
+  }
+  for (int i=0; i<256/64;i++)
+    out[i] = A[i+256/64];
+  // check if m <= out
+  int leq = 1;
+  for (int i=256/64 -1;i>=0;i--){
+    if (m[i]>out[i]){
+      leq = 0;
+      break;
+    }
+    else if (m[i]<out[i]){
+      break;
+    }
+  }
+  // if leq, then perform final subtraction
+  if (leq){
+    uint64_t carry=0;
+#pragma unroll
+    for (int i=0; i<256/64;i++){
+      uint64_t temp = m[i]-carry;
+      out[i] = temp-out[i];
+      carry = (temp<out[i] || m[i]<carry) ? 1:0;
+    }
+  }
+
+}
 
 void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, uint64_t* outOffset){
   //std::cout << "montgomery_multiplication_256 start." << std::endl;
@@ -2571,10 +2624,11 @@ Result Thread::Run(int num_instructions) {
 
         intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
 
-        if (ret_full > wabt::interp::BignumModulus) {
+        if (ret_full >= wabt::interp::BignumModulus) {
           ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
         }
 
+        std::cout << intx::to_string(*a) << " + " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
         *ret_mem = ret_full.lo;
 
         break;
@@ -2597,6 +2651,8 @@ Result Thread::Run(int num_instructions) {
         } else {
           *ret_mem = *a - *b;
         }
+
+        std::cout << intx::to_string(*a) << " - " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
 
         break;
       }
