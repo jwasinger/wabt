@@ -1543,9 +1543,9 @@ wabt::Result BinaryReaderInterp::OnCallExpr(Index func_index) {
     HostFunc * host_func = cast<HostFunc>(func);
     auto func_name = host_func->field_name;
     if (func_name == "bignum_f1m_add") {
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmAddMod));
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mAdd));
     } else if (func_name == "bignum_f1m_sub") {
-      CHECK_RESULT(EmitOpcode(Opcode::EwasmSubMod));
+      CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mSub));
     } else if (func_name == "bignum_f1m_mul") {
       CHECK_RESULT(EmitOpcode(Opcode::Ewasmf1mMul));
     } else if (func_name == "bignum_f1m_square") {

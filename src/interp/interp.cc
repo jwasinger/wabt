@@ -146,9 +146,9 @@ intx::uint256 FqModulus = intx::from_string<intx::uint256>("21888242871839275222
 intx::uint256 FqInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
 intx::uint256 FqRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
 
-intx::uint256 FrModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
-intx::uint256 FrInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
-intx::uint256 FrRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
+intx::uint256 FrModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+intx::uint256 FrInv = intx::from_string<intx::uint256>("134950519161967129512891662437158223871");
+intx::uint256 FrRsquared = intx::from_string<intx::uint256>("944936681149208446651664254269745548490766851729442924617792859073125903783");
 
 intx::uint256 BignumOne = intx::from_string<intx::uint256>("1");
 
@@ -226,8 +226,7 @@ void montmul256_64bitlimbs(uint64_t* const x, uint64_t* const y, uint64_t* const
 
 }
 
-void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, uint64_t* outOffset){
-  //std::cout << "montgomery_multiplication_256 start." << std::endl;
+void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, intx::uint256 *modulus, uint64_t* outOffset){
 
   /*
   bug on this input:
@@ -320,8 +319,8 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
     outOffset[3] = out[3];
 
     intx::uint256 *output = reinterpret_cast<intx::uint256*>(outOffset);
-    if (*output > wabt::interp::BignumModulus) {
-        *output -= wabt::interp::BignumModulus;
+    if (*output > *modulus) {
+        *output -= *modulus;
     }
 }
 
@@ -2523,9 +2522,11 @@ Result Thread::Run(int num_instructions) {
 
         *ret_mem = *a * *b;
 
+        /*
         std::cout << "mul256\na:" << format_u256_hex((uint8_t *)a) << std::endl;
         std::cout << "\nb:" << format_u256_hex((uint8_t *)b) << std::endl;
         std::cout << "\nresult: " << format_u256_hex((uint8_t *)ret_mem) << std::endl;
+        */
 
         break;
       }
@@ -2566,9 +2567,11 @@ Result Thread::Run(int num_instructions) {
 
         *ret_mem = std::get<0>(add_res);
 
+        /*
         std::cout << "add256\na:" << format_u256_hex((uint8_t *)a) << std::endl;
         std::cout << "\nb:" << format_u256_hex((uint8_t *)b) << std::endl;
         std::cout << "\nresult: " << format_u256_hex((uint8_t *)ret_mem) << std::endl;
+        */
 
         uint32_t carry = 0;
         if (std::get<1>(add_res) > 0) {
@@ -2602,7 +2605,7 @@ Result Thread::Run(int num_instructions) {
         break;
       }
 
-      case Opcode::EwasmAddMod: {
+      case Opcode::Ewasmf1mAdd: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2615,17 +2618,17 @@ Result Thread::Run(int num_instructions) {
 
         intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
 
-        if (ret_full >= wabt::interp::BignumModulus) {
-          ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
+        if (ret_full >= wabt::interp::FqModulus) {
+          ret_full -= intx::uint512{0, wabt::interp::FqModulus};
         }
 
-        std::cout << intx::to_string(*a) << " + " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
+        //std::cout << intx::to_string(*a) << " + " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
         *ret_mem = ret_full.lo;
 
         break;
       }
 
-      case Opcode::EwasmSubMod: {
+      case Opcode::Ewasmf1mSub: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2638,12 +2641,12 @@ Result Thread::Run(int num_instructions) {
         intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
 
         if (*a < *b) {
-          *ret_mem = (*a + wabt::interp::BignumModulus) - *b;
+          *ret_mem = (*a + wabt::interp::FqModulus) - *b;
         } else {
           *ret_mem = *a - *b;
         }
 
-        std::cout << intx::to_string(*a) << " - " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
+        //std::cout << intx::to_string(*a) << " - " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
 
         break;
       }
@@ -2656,8 +2659,8 @@ Result Thread::Run(int num_instructions) {
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FqModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FqInv);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
@@ -2666,7 +2669,7 @@ Result Thread::Run(int num_instructions) {
 
         //std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
 
-        montgomery_multiplication_256(a, b, mod, inv, ret);
+        montgomery_multiplication_256(a, b, mod, inv, &FqModulus, ret);
 
         //intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
         //std::cout << "Ewasmf1mMul.  return:" << intx::to_string(*ret_intx) << std::endl;
@@ -2681,13 +2684,13 @@ Result Thread::Run(int num_instructions) {
         Memory* mem = &env_->memories_[0];
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FqModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FqInv);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        std::cout << "square\n";
-        montgomery_multiplication_256(a, a, mod, inv, ret);
+        //std::cout << "square\n";
+        montgomery_multiplication_256(a, a, mod, inv, &FqModulus, ret);
 
         break;
       }
@@ -2702,12 +2705,12 @@ Result Thread::Run(int num_instructions) {
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumOne);
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FqModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FqInv);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_256(a, b, mod, inv, ret);
+        montgomery_multiplication_256(a, b, mod, inv, &FqModulus, ret);
 
         break;
       }
@@ -2718,30 +2721,134 @@ Result Thread::Run(int num_instructions) {
 
         Memory* mem = &env_->memories_[0];
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumRsquared);
+        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::FqModulus);
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FqModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FqInv);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
 		// std::cout << "f1m_toMontgomery\na :" << format_u256_hex((uint8_t *)a) << "\nr squared: " << format_u256_hex((uint8_t *)b) << "\n modulus: " << format_u256_hex((uint8_t *)mod) << "\ninverse: " << format_u256_hex((uint8_t *)inv) << "\n";
-        montgomery_multiplication_256(a, b, mod, inv, ret);
+        montgomery_multiplication_256(a, b, mod, inv, &FqModulus, ret);
 
         break;
       }
-      case Opcode::EwasmFrToMont:
+      case Opcode::EwasmFrToMont: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::FrModulus);
+
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FrModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FrInv);
+
+        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        montgomery_multiplication_256(a, b, mod, inv, &FrModulus, ret);
+        std::cout << "fr_toMont " << intx::to_string(*a) << " -> " << intx::to_string(*ret) << std::endl;
         break;
-      case Opcode::EwasmFrFromMont:
+      }
+      case Opcode::EwasmFrFromMont: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumOne);
+
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FrModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FrInv);
+
+        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        montgomery_multiplication_256(a, b, mod, inv, &FrModulus, ret);
+        std::cout << "fr_fromMont " << intx::to_string(*a) << " -> " << intx::to_string(*ret) << std::endl;
         break;
-      case Opcode::EwasmFrAdd:
+      }
+      case Opcode::EwasmFrAdd: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+
+        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+
+        intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
+
+        if (ret_full >= wabt::interp::FrModulus) {
+          ret_full -= intx::uint512{0, wabt::interp::FrModulus};
+        }
+
+        std::cout << "fr_add " << intx::to_string(*a) << " + " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
+        *ret_mem = ret_full.lo;
+
         break;
-      case Opcode::EwasmFrSub:
+      }
+      case Opcode::EwasmFrSub: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+
+        Memory* mem = &env_->memories_[0];
+        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
+        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+
+        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+
+        if (*a < *b) {
+          *ret_mem = (*a + wabt::interp::FrModulus) - *b;
+        } else {
+          *ret_mem = *a - *b;
+        }
+
+        std::cout << "fr_sub " << intx::to_string(*a) << " - " << intx::to_string(*b) << " = " << intx::to_string(*ret_mem) << std::endl;
+
         break;
-      case Opcode::EwasmFrMul:
+      }
+      case Opcode::EwasmFrMul: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
+
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FrModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FrInv);
+
+        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        montgomery_multiplication_256(a, b, mod, inv, &FrModulus, ret);
+
+        std::cout << "fr_mul " << intx::to_string(*a) << " * " << intx::to_string(*b) << " = " << intx::to_string(*ret) << std::endl;
+
         break;
-      case Opcode::EwasmFrSquare:
+      }
+      case Opcode::EwasmFrSquare: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::FrModulus);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::FrInv);
+
+        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        montgomery_multiplication_256(a, a, mod, inv, &FrModulus, ret);
+
+        std::cout << "fr_square" << intx::to_string(*a) << " ** 2 = " << intx::to_string(*ret) << std::endl;
+
         break;
+      }
       case Opcode::I64DivS:
         CHECK_TRAP(BinopTrap(IntDivS<int64_t>));
         break;
