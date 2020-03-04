@@ -266,6 +266,9 @@ add_library(wabt STATIC
   src/interp/interp-trace.cc
 )
 
+add_library(intx STATIC
+  third_party/intx/lib/intx/div.cpp
+)
 
 if (NOT EMSCRIPTEN)
   if (CODE_COVERAGE)
@@ -406,6 +409,7 @@ if (NOT EMSCRIPTEN)
       third_party/gtest/googletest
       third_party/gtest/googletest/include
       /usr/local/include
+      third_party/intx/include
     )
 
     # gtest

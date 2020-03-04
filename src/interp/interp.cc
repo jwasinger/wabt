@@ -16,6 +16,8 @@
 
 #include "src/interp/interp.h"
 
+#include <intx/intx.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
