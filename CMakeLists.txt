@@ -72,7 +72,7 @@ configure_file(
   ${WABT_BINARY_DIR}/config.h
 )
 
-include_directories(${WABT_SOURCE_DIR} ${WABT_BINARY_DIR})
+include_directories(${WABT_SOURCE_DIR} ${WABT_BINARY_DIR} third_party/intx/include)
 
 if (COMPILER_IS_MSVC)
   # disable warning C4018: signed/unsigned mismatch
@@ -99,7 +99,10 @@ else ()
     -Wuninitialized
   )
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -Wold-style-cast -O3 -flto -v")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -Wold-style-cast -O3 -fno-pie -v")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -Wold-style-cast -O3 -fno-pie -fPIC -v")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -stdlib=libc++ -Wold-style-cast -O3 -fno-PIE -v")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wold-style-cast -O3 -flto")
 
   if (WERROR)
     add_definitions(-Werror)
@@ -286,16 +289,22 @@ if (NOT EMSCRIPTEN)
     # Always link libwabt.
     set(EXE_LIBS "${EXE_LIBS};wabt")
 
+    # link intx
+    set(EXE_LIBS "${EXE_LIBS};intx")
+
+    # link libbenchmark
+    set(EXE_LIBS "${EXE_LIBS};/usr/local/lib/libbenchmark.a")
+
+
     # Optionally link libm.
     if (EXE_WITH_LIBM AND (COMPILER_IS_CLANG OR COMPILER_IS_GNU))
-      set(EXE_LIBS "${EXE_LIBS};m")
+      set(EXE_LIBS "${EXE_LIBS};m;pthread;c++abi")
     endif ()
 
     add_executable(${EXE_NAME} ${EXE_SOURCES})
     add_dependencies(everything ${EXE_NAME})
     target_link_libraries(${EXE_NAME} ${EXE_LIBS})
-    target_link_libraries(${EXE_NAME} /usr/local/lib/libbenchmark.a)
-    set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 11)
+    set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 17)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
     if (EXE_INSTALL)
