@@ -41,6 +41,8 @@
 #include "src/wast-lexer.h"
 #include "src/wast-parser.h"
 
+#include "src/scout/scout.h"
+
 using namespace wabt;
 using namespace wabt::interp;
 
