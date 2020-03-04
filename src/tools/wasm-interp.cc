@@ -173,6 +173,17 @@ static interp::Result PrintCallback(const HostFunc* func,
   return interp::Result::Ok;
 }
 
+
+// function not implemented here, just need a stub so the import is valid
+// the implementation is in interp.cc under `case Opcode::EwasmOpcodeName`
+static interp::Result EwasmHostFunc(const HostFunc* func,
+                                    const interp::FuncSignature* sig,
+                                    const TypedValues& args,
+                                    TypedValues& results) {
+  return interp::Result::Ok;
+}
+
+
 static void InitEnvironment(Environment* env) {
   if (s_host_print) {
     HostModule* host_module = env->AppendHostModule("host");
@@ -188,6 +199,33 @@ static void InitEnvironment(Environment* env) {
       return pair.second;
     };
   }
+
+
+  HostModule* host_module_env = env->AppendHostModule("env");
+
+  // these are here only to make the imports validate
+  host_module_env->AppendFuncExport("bignum_f1m_mul", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_square", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_add", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_sub", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_toMontgomery", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_f1m_fromMontgomery", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+
+  host_module_env->AppendFuncExport("bignum_int_mul", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_add", {{Type::I32, Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_sub", {{Type::I32, Type::I32, Type::I32}, {Type::I32}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_int_div", {{Type::I32, Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+
+  host_module_env->AppendFuncExport("bignum_frm_mul", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_frm_square", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_frm_add", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_frm_sub", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_frm_toMontgomery", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+  host_module_env->AppendFuncExport("bignum_frm_fromMontgomery", {{Type::I32, Type::I32}, {}}, EwasmHostFunc);
+
+  // the scout functions aren't implemented using the "parse call to host func as an opcode"
+  // optimization that we use for the bignum host functions. so they're handled in scout.h
+  AppendScoutFuncs(env, host_module_env);
 }
 
 
