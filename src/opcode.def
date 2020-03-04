@@ -228,6 +228,44 @@ WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe2, InterpCallHost, "call_host")
 WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe3, InterpData, "data")
 WABT_OPCODE(___,  ___,  ___,  ___,  0,  0,    0xe4, InterpDropKeep, "drop_keep")
 
+
+/* These Ewasm "opcodes" are actually host functions.
+ * When parsing the wasm (see src/interp/binary-readaer-interp.cc) these host
+ * function calls will be parsed into wabt IR opcodes. Implementing host
+ * functions as wabt IR opcodes is an optimization to reduce the interpreter
+ * overhead of calling host functions.
+ */
+
+/* note that the number of input params specified here doesn't matter, because
+ * the host function calls are validated using the function type given in the
+ * host function import statement (also, the host function implementations in
+ * src/interp.cc can pop as many input params as they want). The name (last
+ * argument left empty) also doesn't matter, as it is for parsing wat (we only
+ * use wabt to run wasm, not wat. And the wat would only have host function calls
+ * anyway, not non-standard opcodes). The hex code `0xe5` also doesn't matter,
+ * each opcode defined here gets its IR code from the `wabt::Opcode` enum
+ * defined in src/opcode.h.
+ */
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmInt256Add, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmInt256Sub, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmInt256Mul, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmInt256Div, "")
+
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmF1mAdd, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmF1mSub, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmF1mMul, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmF1mSquare, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmF1mFromMont, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmF1mToMont, "")
+
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmFrmAdd, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmFrmSub, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmFrmMul, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmFrmSquare, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmFrmFromMont, "")
+WABT_OPCODE(___,  I32,  I32,  I32,  0,  0,    0xe5, EwasmFrmToMont, "")
+
+
 /* Saturating float-to-int opcodes (--enable-saturating-float-to-int) */
 WABT_OPCODE(I32,  F32,  ___,  ___,  0,  0xfc, 0x00, I32TruncSatF32S, "i32.trunc_sat_f32_s")
 WABT_OPCODE(I32,  F32,  ___,  ___,  0,  0xfc, 0x01, I32TruncSatF32U, "i32.trunc_sat_f32_u")
