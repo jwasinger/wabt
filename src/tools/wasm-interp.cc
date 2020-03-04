@@ -188,7 +188,9 @@ static void InitEnvironment(Environment* env) {
   }
 }
 
+
 static wabt::Result ReadAndRunModule(const char* module_filename) {
+
   constexpr auto to_us = [](chrono_clock::duration d) {
 		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 	};
@@ -211,18 +213,38 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
 
   if (Succeeded(result)) {
     Executor executor(&env, s_trace_stream, s_thread_options);
-    ExecResult exec_result = executor.RunStartFunction(module);
-    if (exec_result.result == interp::Result::Ok) {
-      if (s_run_all_exports) {
-        RunAllExports(module, &executor, RunVerbosity::Verbose);
-        const auto execFinishTime = chrono_clock::now();
-        const auto execDuration = execFinishTime - execStartTime;
-        std::cout << "parse time: " << to_us(parseDuration) << "us\n";
-        std::cout << "exec time: " << to_us(execDuration) << "us\n";
+    //RunAllExports(module, &executor, RunVerbosity::Verbose);
+
+    ExecResult start_result = executor.RunStartFunction(module);
+    if (start_result.result == interp::Result::Ok) {
+
+      TypedValues args;
+      interp::Export* main_ = module->GetExport("main");
+      ExecResult exec_result = executor.RunExport(main_, args);
+
+      const auto execFinishTime = chrono_clock::now();
+      const auto execDuration = execFinishTime - execStartTime;
+      std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
+      std::cout << "exec time: " << std::dec << to_us(execDuration) << "us\n";
+
+      /*
+      ExecResult exec_result = executor.RunStartFunction(module);
+      if (exec_result.result == interp::Result::Ok) {
+        if (s_run_all_exports) {
+          RunAllExports(module, &executor, RunVerbosity::Verbose);
+          const auto execFinishTime = chrono_clock::now();
+          const auto execDuration = execFinishTime - execStartTime;
+          std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+          std::cout << "exec time: " << to_us(execDuration) << "us\n";
+        }
+      } else {
+        WriteResult(s_stdout_stream.get(), "error running start function",
+                    exec_result.result);
       }
+      */
     } else {
       WriteResult(s_stdout_stream.get(), "error running start function",
-                  exec_result.result);
+                  start_result.result);
     }
   }
   return result;

@@ -157,23 +157,6 @@ static interp::Result PrintCallback(const HostFunc* func,
   return interp::Result::Ok;
 }
 
-// function not implemented here, just need a stub so the import is valid
-// the implementation is in interp.cc under `case Opcode::EwasmCall`
-static interp::Result EwasmHostFunc(const HostFunc* func,
-                                    const interp::FuncSignature* sig,
-                                    const TypedValues& args,
-                                    TypedValues& results) {
-  //printf("ewasmHostFunc");
-  return interp::Result::Ok;
-}
-
-static interp::Result EthereumFinish(const HostFunc* func,
-                                    const interp::FuncSignature* sig,
-                                    const TypedValues& args,
-                                    TypedValues& results) {
-  //printf("EthereumFinish");
-  return interp::Result::Ok;
-}
 
 static void InitEnvironment(Environment* env) {
   if (s_host_print) {
@@ -191,14 +174,9 @@ static void InitEnvironment(Environment* env) {
     };
   }
 
-  // this is just here so the import is valid
-  HostModule* host_module_debug = env->AppendHostModule("ewasm");
-  host_module_debug->AppendFuncExport("ewasmHostFunc", {{Type::I32, Type::I32, Type::I32}, {}}, EwasmHostFunc);
-
-  HostModule* host_module_ethereum = env->AppendHostModule("ethereum");
-  host_module_ethereum->AppendFuncExport("finish", {{Type::I32, Type::I32}, {}}, EthereumFinish);
-
 }
+
+
 /*
 static wabt::Result ReadAndRunModule(const char* module_filename) {
   constexpr auto to_us = [](chrono_clock::duration d) {
@@ -240,9 +218,11 @@ static wabt::Result ReadAndRunModule(const char* module_filename) {
 
 
 static wabt::Result InstantiateModule(const char* module_filename) {
+	/*
   constexpr auto to_us = [](chrono_clock::duration d) {
 		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 	};
+	*/
 
   wabt::Result result;
   //Environment env;
@@ -256,9 +236,16 @@ static wabt::Result InstantiateModule(const char* module_filename) {
   result = ReadModule(module_filename, &env, &errors, &module);
   FormatErrorsToFile(errors, Location::Type::Binary);
 
-  const auto now = chrono_clock::now();
-	const auto parseDuration = now - parseStartTime;
-  std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+  Executor executor(&env, s_trace_stream, s_thread_options);
+  ExecResult start_result = executor.RunStartFunction(module);
+  if (start_result.result != interp::Result::Ok) {
+    WriteResult(s_stdout_stream.get(), "error running start function",
+                start_result.result);
+    return wabt::Result::Error;;
+  }
+  //const auto now = chrono_clock::now();
+	//const auto parseDuration = now - parseStartTime;
+  //std::cout << "parse time: " << to_us(parseDuration) << "us\n";
 
   return result;
 }
@@ -321,8 +308,10 @@ namespace
     // or reset on every loop?
     wabt::Result result;
 
+    // TODO: InstantiateModule before execute
+
     for (auto _ : state) {
-      result = InstantiateModule(s_infile);
+      //result = InstantiateModule(s_infile);
       result = ExecuteModule();
     }
 

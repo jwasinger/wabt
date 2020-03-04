@@ -32,6 +32,11 @@
 #include "src/stream.h"
 #include "src/utf8.h"
 
+#include <chrono>
+#include <iostream>
+
+using chrono_clock = std::chrono::high_resolution_clock;
+
 #if HAVE_ALLOCA
 #include <alloca.h>
 #endif
@@ -57,6 +62,10 @@
 #define CALLBACK(member, ...)                             \
   ERROR_UNLESS(Succeeded(delegate_->member(__VA_ARGS__)), \
                #member " callback failed")
+
+ constexpr auto to_us = [](chrono_clock::duration d) {
+		return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+	};
 
 namespace wabt {
 
@@ -1938,6 +1947,7 @@ Result BinaryReader::ReadFunctionSection(Offset section_size) {
 }
 
 Result BinaryReader::ReadTableSection(Offset section_size) {
+  const auto parseStartTime = chrono_clock::now();
   CALLBACK(BeginTableSection, section_size);
   CHECK_RESULT(ReadCount(&num_tables_, "table count"));
   if (!options_.features.reference_types_enabled()) {
@@ -1953,10 +1963,14 @@ Result BinaryReader::ReadTableSection(Offset section_size) {
     CALLBACK(OnTable, table_index, elem_type, &elem_limits);
   }
   CALLBACK0(EndTableSection);
+  const auto now = chrono_clock::now();
+  const auto parseDuration = now - parseStartTime;
+  std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
   return Result::Ok;
 }
 
 Result BinaryReader::ReadMemorySection(Offset section_size) {
+  const auto parseStartTime = chrono_clock::now();
   CALLBACK(BeginMemorySection, section_size);
   CHECK_RESULT(ReadCount(&num_memories_, "memory count"));
   ERROR_UNLESS(num_memories_ <= 1, "memory count must be 0 or 1");
@@ -1967,7 +1981,11 @@ Result BinaryReader::ReadMemorySection(Offset section_size) {
     CHECK_RESULT(ReadMemory(&page_limits));
     CALLBACK(OnMemory, memory_index, &page_limits);
   }
+  const auto now = chrono_clock::now();
+  const auto parseDuration = now - parseStartTime;
+  std::cout << "ReadMemorySection time: " << std::dec << to_us(parseDuration) << "us\n";
   CALLBACK0(EndMemorySection);
+
   return Result::Ok;
 }
 
