@@ -105,23 +105,39 @@ intx::uint256 BignumOne = intx::from_string<intx::uint256>("1");
 // Mask128 = 0xffffffffffffffffffffffffffffffff
 intx::uint128 Mask128 = intx::from_string<intx::uint128>("340282366920938463463374607431768211455");
 
+//0xffffffffffffffff
+intx::uint128 Mask64 = intx::from_string<intx::uint128>("18446744073709551615");
+
+// for bls12-381
+
+// Mask192 = 0xffffffffffffffffffffffffffffffffffffffffffffffff
+intx::uint256 Mask192 = intx::from_string<intx::uint256>("6277101735386680763835789423207666416102355444464034512895");
+// field modulus = 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
+intx::uint512 BignumModulus = intx::from_string<intx::uint512>("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787");
+// Inv192 = 0x16ef2ef0c8e30b48286adb92d9d113e889f3fffcfffcfffd
+intx::uint256 BignumInv192 = intx::from_string<intx::uint256>("562347645077012667207365078502783620839491177873185505277");
+// R_squared = 0x11988fe592cae3aa9a793e85b519952d67eb88a9939d83c08de5476c4c95b6d50a76e6a609d104f1f4df1f341c341746
+intx::uint512 BignumRsquared = intx::from_string<intx::uint512>("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750");
+
+
+
 
 // for bn128
 // modulus = 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 // inv = 0x9ede7d651eca6ac987d20782e4866389
 // r_squared = 0x06d89f71cab8351f47ab1eff0a417ff6b5e71911d44501fbf32cfc5b538afa89
-intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
-intx::uint256 BignumInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
-intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
+//intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
+//intx::uint256 BignumInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
+//intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
 
 
 // for bn128 used by daquiri (bn128 Fr constants, as opposed to Fq)
 // modulus = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
 // inv = 0x6586864b4c6911b3c2e1f593efffffff
 // r_squared = 0x0216d0b17f4e44a58c49833d53bb808553fe3ab1e35c59e31bb8e645ae216da7
-intx::uint256 BignumModulusFr = intx::from_string<intx::uint256>("21888242871839275222246405745257275088548364400416034343698204186575808495617");
-intx::uint256 BignumInvFr = intx::from_string<intx::uint256>("134950519161967129512891662437158223871");
-intx::uint256 BignumRsquaredFr = intx::from_string<intx::uint256>("944936681149208446651664254269745548490766851729442924617792859073125903783");
+//intx::uint256 BignumModulusFr = intx::from_string<intx::uint256>("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+//intx::uint256 BignumInvFr = intx::from_string<intx::uint256>("134950519161967129512891662437158223871");
+//intx::uint256 BignumRsquaredFr = intx::from_string<intx::uint256>("944936681149208446651664254269745548490766851729442924617792859073125903783");
 
 
 // for secp256k1
@@ -138,37 +154,128 @@ intx::uint256 BignumRsquaredFr = intx::from_string<intx::uint256>("9449366811492
 
 typedef unsigned __int128 uint128_t;
 
-
-void montgomery_multiplication_256_non_interleaved(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv_ptr, uint64_t* out) {
+// montgomery_multiplication_384_non_interleaved
+void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv_ptr, uint64_t* out) {
+  using intx::uint1024;
   using intx::uint512;
+  using intx::uint384;
+  using intx::uint256;
+  //using intx::uint128;
 
-  intx::uint256* a = reinterpret_cast<intx::uint256*>(x);
-  intx::uint256* b = reinterpret_cast<intx::uint256*>(y);
-  intx::uint256* mod = reinterpret_cast<intx::uint256*>(m);
-  intx::uint256* inv = reinterpret_cast<intx::uint256*>(inv_ptr);
-  intx::uint256* ret = reinterpret_cast<intx::uint256*>(out);
+  intx::uint384* a = reinterpret_cast<intx::uint384*>(x);
+  intx::uint384* b = reinterpret_cast<intx::uint384*>(y);
+  intx::uint384* mod = reinterpret_cast<intx::uint384*>(m);
+  // inv is a pointer to BignumInv192
+  intx::uint256* inv_192 = reinterpret_cast<intx::uint256*>(inv_ptr);
+
+  //intx::uint128* inv_hi_128 = 
+
+  //intx::uint128 inv_hi_128 = intx::uint128{0, (inv_256->hi).lo};
+  //intx::uint256 inv_192 = intx::uint256{inv_hi_128, inv_256->lo};
+  //intx::uint128* inv_128 = reinterpret_cast<intx::uint128*>(inv_ptr);
+
+  /*
+  intx::uint512* a_512 = reinterpret_cast<intx::uint512*>(&(mem->data[a_offset]));
+  intx::uint512* b_512 = reinterpret_cast<intx::uint512*>(&(mem->data[b_offset]));
+
+  
+  //intx::uint512 b_384 = intx::uint512{intx::uint256{0, (b_512->hi).lo}, b_512->lo};
+
+  intx::uint256* ret_mem_lo_256 = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+  intx::uint128* ret_mem_hi_128 = reinterpret_cast<intx::uint128*>(&(mem->data[ret_offset + 128])); // TODO: plus 128 or minus 128?
+
+  intx::uint512 ret_512 = a_384 + b_384;
+  */
+
+
+  intx::uint384* ret = reinterpret_cast<intx::uint384*>(out);
 
   //std::cout << "montgomery_multiplication_256 using non-interleaved.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
 
-  auto res1 = uint512{*a} * uint512{*b};
+  //std::cout << "montgomery_multiplication_256 using non-interleaved.  inv: " << intx::to_string(*inv_192) << std::endl;
+
+  //uint512 res1 = *a * *b; // results in a 384-bit number
+  uint512 res1 = uint512{*a} * uint512{*b};
+  uint1024 res1_1024 = uint1024{*a} * uint1024{*b};
+  //std::cout << "res1_1024.lo: " << intx::to_string(res1_1024.lo) << std::endl;
+  //std::cout << "res1_1024.hi: " << intx::to_string(res1_1024.hi) << std::endl;
+
+
+  //std::cout << "res1: " << intx::to_string(res1) << std::endl;
   //auto k0 = ((inv * res1).lo).lo;
-  auto k0 = (uint512{*inv} * res1).lo & Mask128;
-  auto res2 = ((uint512{k0} * uint512{*mod}) + res1) >> 128;
-  auto k1 = (res2 * uint512{*inv}).lo & Mask128;
-  auto result = ((uint512{k1} * uint512{*mod}) + res2) >> 128;
+  uint512 res1_times_inv = uint512{*inv_192} * res1;
+
+  //std::cout << "res1_times_inv: " << intx::to_string(res1_times_inv) << std::endl;
+  // intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo}
+  intx::uint128 k0_upper_64 = 1 * res1_times_inv.lo.hi & Mask64;
+  intx::uint128 k0_lower_128 = 1 * res1_times_inv.lo.lo;
+
+  uint256 k0 = uint256{ k0_upper_64, k0_lower_128 };
+  // uint256 k0 = uint256{ intx::uint128{res1_times_inv.hi.lo}, intx::uint128{res1_times_inv.lo.hi, res1_times_inv.lo.lo} };
+  //uint512 k0 = (uint512{*inv_192} * res1) & intx::uint256{Mask192};
+  //std::cout << "k0: " << intx::to_string(k0) << std::endl;
+  // 6a135e6cfc2c8c6c33672a3bfb8e939a
+  // 13dc9c4146bc94a96a135e6cfc2c8c6c33672a3bfb8e939a
+  //std::cout << "mod: " << intx::to_string(uint512{*mod}) << std::endl;
+  uint1024 k0_times_mod = uint1024{k0} * uint1024{*mod};
+  //std::cout << "k0_times_mod.lo: " << intx::to_string(k0_times_mod.lo) << std::endl;
+  uint1024 k0_times_mod_plus_res1 = k0_times_mod + uint1024{res1_1024};
+  //std::cout << "k0_times_mod_plus_res1.lo: " << intx::to_string(k0_times_mod_plus_res1.lo) << std::endl;
+
+
+  //uint1024 res2 = ((uint1024{k0} * uint1024{*mod}) + res1) >> 192;
+  uint1024 res2_before_shift = ((uint1024{k0} * uint1024{*mod}) + res1_1024);
+  //std::cout << "res2_before_shift.lo: " << intx::to_string(res2_before_shift.lo) << std::endl;
+  //std::cout << "res2_before_shift.hi: " << intx::to_string(res2_before_shift.hi) << std::endl;
+
+  uint1024 res2 = ((uint1024{k0} * uint1024{*mod}) + res1_1024) >> 192;
+
+  uint1024 k1 = (uint1024{res2} * uint1024{*inv_192}) & uint512{Mask192};
+  //std::cout << "k1.lo: " << intx::to_string(k1.lo) << std::endl;
+
+  uint1024 k1_times_mod = uint1024{k1} * uint1024{*mod};
+  //std::cout << "k1_times_mod.lo: " << intx::to_string(k1_times_mod.lo) << std::endl;
+  //std::cout << "k1_times_mod.hi: " << intx::to_string(k1_times_mod.hi) << std::endl;
+
+  uint1024 k1_times_mod_plus_res2 = uint1024(k1_times_mod) + uint1024(res2);
+  //std::cout << "k1_times_mod_plus_res2.lo: " << intx::to_string(k1_times_mod_plus_res2.lo) << std::endl;
+  //std::cout << "k1_times_mod_plus_res2.hi: " << intx::to_string(k1_times_mod_plus_res2.hi) << std::endl;
+
+  // bring the one 64-bit limb that was in the upper 512-bit result, to the most significant position in the 384-bit result. shift left by 320 (= 384 - 64)
+  uint512 high_bits_shifted_left = k1_times_mod_plus_res2.hi << 320; 
+  //std::cout << "high_bits_shifted_left: " << intx::to_string(high_bits_shifted_left) << std::endl;
+
+  //uint1024 k1_times_mod_plus_res2_shifted = k1_times_mod_plus_res2 >> uint1024{192};
+  // TODO: this shift right on a uint1024 doesn't shift the high bits into the low bits.
+
+  uint512 k1_times_mod_plus_res2_shifted = k1_times_mod_plus_res2.lo >> 192;
+  k1_times_mod_plus_res2_shifted = k1_times_mod_plus_res2_shifted + high_bits_shifted_left;
+  //std::cout << "k1_times_mod_plus_res2_shifted: " << intx::to_string(k1_times_mod_plus_res2_shifted) << std::endl;
+  //std::cout << "k1_times_mod_plus_res2_shifted.hi: " << intx::to_string(k1_times_mod_plus_res2_shifted.hi) << std::endl;
+
+  //auto result = ((uint512{k1} * uint512{*mod}) + res2) >> 192;
+  //uint1024 result_1024 = ((uint1024{k1} * uint1024{*mod}) + uint1024{res2}) >> 192;
+  uint512 result = k1_times_mod_plus_res2_shifted;
   if (result >= *mod) {
     result = result - *mod;
   }
 
-  intx::uint256 result_256 = result.lo;
-  //std::cout << "montgomery_multiplication_256 using non-interleaved.  result: " << intx::to_string(result_256) << std::endl;
-  intx::uint128 result_low_128 = result_256.lo;
-  intx::uint128 result_high_128 = result_256.hi;
+  //std::cout << "montgomery_multiplication_256 using non-interleaved.  result: " << intx::to_string(result) << std::endl;
+
+  intx::uint256 result_lo_256 = result.lo;
+  intx::uint256 result_high_256 = result.hi;
+
+  intx::uint128 result_low_128 = result_lo_256.lo;
+  intx::uint128 result_high_128 = result_lo_256.hi;
+
+  intx::uint128 result_hi_256_low_128 = result_high_256.lo;
 
   out[0] = result_low_128.lo;
   out[1] = result_low_128.hi;
   out[2] = result_high_128.lo;
   out[3] = result_high_128.hi;
+  out[4] = result_hi_256_low_128.lo;
+  out[5] = result_hi_256_low_128.hi;
 }
 
 
@@ -2228,26 +2335,37 @@ Result Thread::Run(int num_instructions) {
         break;
       }
 
+      // Int384Add
       case Opcode::EwasmInt256Add: {
+        std::cout << "EwasmInt384Add." << std::endl;
+
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
 
         //*ret_mem = *a + *b;
 
-        const auto add_res = add_with_carry(*a, *b);
+        std::cout << "EwasmInt384Add.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
+
+        auto const add_res = add_with_carry(*a, *b);
 
         *ret_mem = std::get<0>(add_res);
+
+        //intx::uint384* result_intx = reinterpret_cast<intx::uint384*>(ret_mem);
+        
 
         uint32_t carry = 0;
         if (std::get<1>(add_res) > 0) {
           carry = 1;
         }
+
+        std::cout << "EwasmInt384Add.  carry: " << carry << std::endl;
+        std::cout << "EwasmInt384Add.  result: " << intx::to_string(std::get<0>(add_res)) << std::endl;
 
         Push<uint32_t>(carry);
 
@@ -2285,18 +2403,26 @@ Result Thread::Run(int num_instructions) {
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        intx::uint512* a_512 = reinterpret_cast<intx::uint512*>(&(mem->data[a_offset]));
+        intx::uint512* b_512 = reinterpret_cast<intx::uint512*>(&(mem->data[b_offset]));
 
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint512 a_384 = intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo};
+        intx::uint512 b_384 = intx::uint512{intx::uint256{0, (b_512->hi).lo}, b_512->lo};
 
-        intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
+        intx::uint256* ret_mem_lo_256 = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint128* ret_mem_hi_128 = reinterpret_cast<intx::uint128*>(&(mem->data[ret_offset + 128])); // TODO: plus 128 or minus 128?
 
-        if (ret_full >= wabt::interp::BignumModulus) {
-          ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
+
+        intx::uint512 ret_512 = a_384 + b_384;
+        //intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
+
+        if (ret_512 >= wabt::interp::BignumModulus) {
+          //ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
+          ret_512 -= wabt::interp::BignumModulus;
         }
 
-        *ret_mem = ret_full.lo;
+        *ret_mem_lo_256 = ret_512.lo;
+        *ret_mem_hi_128 = ret_512.hi.lo;
 
         break;
       }
@@ -2306,23 +2432,32 @@ Result Thread::Run(int num_instructions) {
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
-
         Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        intx::uint512* a_512 = reinterpret_cast<intx::uint512*>(&(mem->data[a_offset]));
+        intx::uint512* b_512 = reinterpret_cast<intx::uint512*>(&(mem->data[b_offset]));
 
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint512 a_384 = intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo};
+        intx::uint512 b_384 = intx::uint512{intx::uint256{0, (b_512->hi).lo}, b_512->lo};
 
-        if (*a < *b) {
-          *ret_mem = (*a + wabt::interp::BignumModulus) - *b;
+        intx::uint256* ret_mem_lo_256 = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint128* ret_mem_hi_128 = reinterpret_cast<intx::uint128*>(&(mem->data[ret_offset + 128])); // TODO: plus 128 or minus 128?
+
+        intx::uint512 ret_512 = 0;
+
+        if (a_384 < b_384) {
+          ret_512 = (a_384 + wabt::interp::BignumModulus) - b_384;
         } else {
-          *ret_mem = *a - *b;
+          ret_512 = a_384 - b_384;
         }
+
+        *ret_mem_lo_256 = ret_512.lo;
+        *ret_mem_hi_128 = ret_512.hi.lo;
 
         break;
       }
 
       case Opcode::EwasmF1mMul: {
+        std::cout << "EwasmF1mMul." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2332,36 +2467,46 @@ Result Thread::Run(int num_instructions) {
         uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
 
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        //intx::uint256* a_intx = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        //intx::uint256* b_intx = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
+        intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b_intx = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
 
-        //std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
+        montgomery_multiplication_384(a, b, mod, inv, ret);
 
-        montgomery_multiplication_256(a, b, mod, inv, ret);
-
-        //intx::uint256* ret_intx = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-        //std::cout << "Ewasmf1mMul.  return:" << intx::to_string(*ret_intx) << std::endl;
+        intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        std::cout << "Ewasmf1mMul.  result:" << intx::to_string(*ret_intx) << std::endl;
 
         break;
       }
 
       case Opcode::EwasmF1mSquare: {
+        std::cout << "EwasmF1mSquare." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
 
+        intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*a_intx) << std::endl;
+
+
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_256(a, a, mod, inv, ret);
+        montgomery_multiplication_384(a, a, mod, inv, ret);
+
+        intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*ret_intx) << std::endl;
+
 
         break;
       }
@@ -2375,11 +2520,11 @@ Result Thread::Run(int num_instructions) {
         uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumOne);
 
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_256(a, b, mod, inv, ret);
+        montgomery_multiplication_384(a, b, mod, inv, ret);
 
         break;
       }
@@ -2393,11 +2538,11 @@ Result Thread::Run(int num_instructions) {
         uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumRsquared);
 
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
+        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_256(a, b, mod, inv, ret);
+        montgomery_multiplication_384(a, b, mod, inv, ret);
 
         break;
       }
@@ -2405,7 +2550,7 @@ Result Thread::Run(int num_instructions) {
 
 
       /**** Frm bignum funcs. These replicate websnark's Frm_* functions (`m` stands for montgomery, `r` refers to using the order of the curve group as the modulus rather than the base field) ****/
-
+      /*
       case Opcode::EwasmFrmMul: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
@@ -2519,6 +2664,7 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
+      */
 
 
 

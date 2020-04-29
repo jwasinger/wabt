@@ -5,6 +5,7 @@
 #pragma once
 
 #include <intx/int128.hpp>
+//#include <intx/uint384.hpp>
 
 #include <algorithm>
 #include <array>
@@ -60,6 +61,11 @@ struct uint
 
 using uint256 = uint<256>;
 using uint512 = uint<512>;
+using uint1024 = uint<1024>;
+
+
+
+
 
 template <typename T>
 struct traits
@@ -916,6 +922,78 @@ constexpr uint<N> operator^(const T& x, const uint<N>& y) noexcept
 {
     return uint<N>(x) ^ y;
 }
+
+
+
+
+struct uint384
+{
+    static constexpr auto num_words = 6;
+
+    uint64_t words[num_words]{};
+
+    explicit uint384(uint512 v) noexcept
+    {
+        for (int i = 0; i < num_words; ++i)
+            words[i] = as_words(v)[i];
+    }
+
+    operator uint512() const noexcept
+    {
+        uint512 a;
+        for (int i = 0; i < num_words; ++i)
+            as_words(a)[i] = words[i];
+        return a;
+    }
+};
+
+inline uint384 operator+(const uint384& x, const uint384& y) noexcept
+{
+    return static_cast<uint384>(uint512{x} + uint512{y});
+}
+
+inline uint384 operator-(const uint384& x, const uint384& y) noexcept
+{
+    return static_cast<uint384>(uint512{x} - uint512{y});
+}
+
+inline uint384 operator*(const uint384& x, const uint384& y) noexcept
+{
+    return static_cast<uint384>(uint512{x} * uint512{y});
+}
+
+inline uint384 operator/(const uint384& x, const uint384& y) noexcept
+{
+    return static_cast<uint384>(uint512{x} / uint512{y});
+}
+
+inline std::string to_string(uint384 x)
+{
+    return to_string(uint512(x));
+}
+
+
+constexpr bool operator<(const uint384& a, const uint384& b) noexcept
+{
+    // Bitwise operators are used to implement logic here to avoid branching.
+    // It also should make the function smaller, but no proper benchmark has
+    // been done.
+    return uint512{a} < uint512{b};
+    //return (a.hi < b.hi) | ((a.hi == b.hi) & (a.lo < b.lo));
+}
+
+
+inline std::tuple<uint384, bool> add_with_carry(uint384 a, uint384 b) noexcept
+{
+    const uint384 s = a + b;
+    const bool k = s < a;
+    return {s, k};
+}
+
+
+
+
+
 
 
 namespace be  // Conversions to/from BE bytes.
