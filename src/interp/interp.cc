@@ -100,7 +100,8 @@ void WriteTypedValues(Stream* stream, const TypedValues& values) {
 
 /***** Bignum constants are used in the bignum functions ****/
 
-intx::uint256 BignumOne = intx::from_string<intx::uint256>("1");
+intx::uint256 BignumOne256 = intx::from_string<intx::uint256>("1");
+intx::uint384 BignumOne = intx::uint384{BignumOne256};
 
 // Mask128 = 0xffffffffffffffffffffffffffffffff
 intx::uint128 Mask128 = intx::from_string<intx::uint128>("340282366920938463463374607431768211455");
@@ -113,12 +114,14 @@ intx::uint128 Mask64 = intx::from_string<intx::uint128>("18446744073709551615");
 // Mask192 = 0xffffffffffffffffffffffffffffffffffffffffffffffff
 intx::uint256 Mask192 = intx::from_string<intx::uint256>("6277101735386680763835789423207666416102355444464034512895");
 // field modulus = 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
-intx::uint512 BignumModulus = intx::from_string<intx::uint512>("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787");
+intx::uint512 BignumModulus512 = intx::from_string<intx::uint512>("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787");
+intx::uint384 BignumModulus = intx::uint384{BignumModulus512};
+
 // Inv192 = 0x16ef2ef0c8e30b48286adb92d9d113e889f3fffcfffcfffd
 intx::uint256 BignumInv192 = intx::from_string<intx::uint256>("562347645077012667207365078502783620839491177873185505277");
 // R_squared = 0x11988fe592cae3aa9a793e85b519952d67eb88a9939d83c08de5476c4c95b6d50a76e6a609d104f1f4df1f341c341746
-intx::uint512 BignumRsquared = intx::from_string<intx::uint512>("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750");
-
+intx::uint512 BignumRsquared512 = intx::from_string<intx::uint512>("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750");
+intx::uint384 BignumRsquared = intx::uint384{BignumRsquared512};
 
 
 
@@ -190,7 +193,8 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
 
   intx::uint384* ret = reinterpret_cast<intx::uint384*>(out);
 
-  //std::cout << "montgomery_multiplication_256 using non-interleaved.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
+  //std::cout << "montgomery_multiplication_256 using non-interleaved.  a: " << intx::to_string(*a) << std::endl;
+  //std::cout << "montgomery_multiplication_256 using non-interleaved.  b: " << intx::to_string(*b) << std::endl;
 
   //std::cout << "montgomery_multiplication_256 using non-interleaved.  inv: " << intx::to_string(*inv_192) << std::endl;
 
@@ -232,6 +236,7 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
 
   uint1024 k1 = (uint1024{res2} * uint1024{*inv_192}) & uint512{Mask192};
   //std::cout << "k1.lo: " << intx::to_string(k1.lo) << std::endl;
+  //std::cout << "k1.hi: " << intx::to_string(k1.hi) << std::endl;
 
   uint1024 k1_times_mod = uint1024{k1} * uint1024{*mod};
   //std::cout << "k1_times_mod.lo: " << intx::to_string(k1_times_mod.lo) << std::endl;
@@ -2305,9 +2310,9 @@ Result Thread::Run(int num_instructions) {
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
 
         *ret_mem = *a * *b;
 
@@ -2321,23 +2326,23 @@ Result Thread::Run(int num_instructions) {
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-        intx::uint256* ret_remainder_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-        intx::uint256* ret_quotient_mem = reinterpret_cast<intx::uint256*>(&(mem->data[c_offset]));
+        intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        intx::uint384* ret_remainder_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        intx::uint384* ret_quotient_mem = reinterpret_cast<intx::uint384*>(&(mem->data[c_offset]));
 
         //*ret_remainder_mem = *a % *b;
         //*ret_quotient_mem = *a / *b;
         const auto div_res = udivrem(*a, *b);
-        *ret_quotient_mem = div_res.quot;
-        *ret_remainder_mem = div_res.rem;
+        *ret_quotient_mem = intx::uint384{div_res.quot};
+        *ret_remainder_mem = intx::uint384{div_res.rem};
 
         break;
       }
 
       // Int384Add
       case Opcode::EwasmInt256Add: {
-        std::cout << "EwasmInt384Add." << std::endl;
+        //std::cout << "EwasmInt384Add." << std::endl;
 
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
@@ -2350,22 +2355,21 @@ Result Thread::Run(int num_instructions) {
 
         //*ret_mem = *a + *b;
 
-        std::cout << "EwasmInt384Add.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
+        //std::cout << "EwasmInt384Add.  a: " << intx::to_string(*a) << "  b: " << intx::to_string(*b) << std::endl;
 
         auto const add_res = add_with_carry(*a, *b);
 
         *ret_mem = std::get<0>(add_res);
 
         //intx::uint384* result_intx = reinterpret_cast<intx::uint384*>(ret_mem);
-        
 
         uint32_t carry = 0;
         if (std::get<1>(add_res) > 0) {
           carry = 1;
         }
 
-        std::cout << "EwasmInt384Add.  carry: " << carry << std::endl;
-        std::cout << "EwasmInt384Add.  result: " << intx::to_string(std::get<0>(add_res)) << std::endl;
+        //std::cout << "EwasmInt384Add.  carry: " << carry << std::endl;
+        //std::cout << "EwasmInt384Add.  result: " << intx::to_string(std::get<0>(add_res)) << std::endl;
 
         Push<uint32_t>(carry);
 
@@ -2378,9 +2382,9 @@ Result Thread::Run(int num_instructions) {
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
+        intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
 
         uint32_t carry = 0;
         if (*a < *b) {
@@ -2397,6 +2401,7 @@ Result Thread::Run(int num_instructions) {
 
       /**** F1m bignum funcs. These replicate websnark's F1m_* functions (m stands for montgomery, and F1 refers using the base field `q` as the modulus) ****/
 
+      /*
       case Opcode::EwasmF1mAdd: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
@@ -2426,6 +2431,31 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
+      */
+
+      case Opcode::EwasmF1mAdd: {
+        uint32_t ret_offset = Pop<uint32_t>();
+        uint32_t b_offset = Pop<uint32_t>();
+        uint32_t a_offset = Pop<uint32_t>();
+
+        Memory* mem = &env_->memories_[0];
+        intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+
+        intx::uint384 ret = *a + *b;
+        //intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
+
+        if (ret >= wabt::interp::BignumModulus) {
+          //ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
+          ret -= wabt::interp::BignumModulus;
+        }
+
+        *ret_mem = ret;
+
+        break;
+      }
+
 
       case Opcode::EwasmF1mSub: {
         uint32_t ret_offset = Pop<uint32_t>();
@@ -2433,31 +2463,22 @@ Result Thread::Run(int num_instructions) {
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
-        intx::uint512* a_512 = reinterpret_cast<intx::uint512*>(&(mem->data[a_offset]));
-        intx::uint512* b_512 = reinterpret_cast<intx::uint512*>(&(mem->data[b_offset]));
+        intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
 
-        intx::uint512 a_384 = intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo};
-        intx::uint512 b_384 = intx::uint512{intx::uint256{0, (b_512->hi).lo}, b_512->lo};
+        intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
 
-        intx::uint256* ret_mem_lo_256 = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-        intx::uint128* ret_mem_hi_128 = reinterpret_cast<intx::uint128*>(&(mem->data[ret_offset + 128])); // TODO: plus 128 or minus 128?
-
-        intx::uint512 ret_512 = 0;
-
-        if (a_384 < b_384) {
-          ret_512 = (a_384 + wabt::interp::BignumModulus) - b_384;
+        if (*a < *b) {
+          *ret_mem = (*a + wabt::interp::BignumModulus) - *b;
         } else {
-          ret_512 = a_384 - b_384;
+          *ret_mem = *a - *b;
         }
-
-        *ret_mem_lo_256 = ret_512.lo;
-        *ret_mem_hi_128 = ret_512.hi.lo;
 
         break;
       }
 
       case Opcode::EwasmF1mMul: {
-        std::cout << "EwasmF1mMul." << std::endl;
+        //std::cout << "EwasmF1mMul." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2472,28 +2493,28 @@ Result Thread::Run(int num_instructions) {
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
-        intx::uint384* b_intx = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
-        std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
+        //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        //intx::uint384* b_intx = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        //std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
 
         montgomery_multiplication_384(a, b, mod, inv, ret);
 
-        intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
-        std::cout << "Ewasmf1mMul.  result:" << intx::to_string(*ret_intx) << std::endl;
+        //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        //std::cout << "Ewasmf1mMul.  result:" << intx::to_string(*ret_intx) << std::endl;
 
         break;
       }
 
       case Opcode::EwasmF1mSquare: {
-        std::cout << "EwasmF1mSquare." << std::endl;
+        //std::cout << "EwasmF1mSquare." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
 
-        intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
-        std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*a_intx) << std::endl;
+        //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*a_intx) << std::endl;
 
 
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
@@ -2504,12 +2525,13 @@ Result Thread::Run(int num_instructions) {
 
         montgomery_multiplication_384(a, a, mod, inv, ret);
 
-        intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
-        std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*ret_intx) << std::endl;
+        //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*ret_intx) << std::endl;
 
 
         break;
       }
+
 
       case Opcode::EwasmF1mFromMont: {
         uint32_t ret_offset = Pop<uint32_t>();
@@ -2519,6 +2541,10 @@ Result Thread::Run(int num_instructions) {
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumOne);
 
+        //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        //std::cout << "EwasmF1mFromMont.  a:" << intx::to_string(*a_intx) << std::endl;
+
+
         uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
         uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
@@ -2526,9 +2552,14 @@ Result Thread::Run(int num_instructions) {
 
         montgomery_multiplication_384(a, b, mod, inv, ret);
 
+        //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        //std::cout << "EwasmF1mFromMont.  result:" << intx::to_string(*ret_intx) << std::endl;
+
         break;
       }
 
+
+      /*
       case Opcode::EwasmF1mToMont: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2546,7 +2577,7 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
-
+      */
 
 
       /**** Frm bignum funcs. These replicate websnark's Frm_* functions (`m` stands for montgomery, `r` refers to using the order of the curve group as the modulus rather than the base field) ****/

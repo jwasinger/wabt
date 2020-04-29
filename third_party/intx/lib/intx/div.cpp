@@ -178,4 +178,31 @@ div_result<uint512> udivrem(const uint512& u, const uint512& v) noexcept
     return udivrem_knuth(na);
 }
 
+
+div_result<uint384> udivrem(const uint384& u, const uint384& v) noexcept
+{
+    auto na = normalize(u, v);
+
+
+    if (na.num_denominator_words > na.num_numerator_words)
+        return {uint384{0}, u};
+
+    if (na.num_denominator_words == 1) {
+        auto x = udivrem_by1(na);
+        //return udivrem_by1(na);
+        return {uint384{x.quot}, uint384{x.rem}};
+    }
+
+    if (na.num_denominator_words == 2) {
+        auto x = udivrem_by2(na);
+        return {uint384{x.quot}, uint384{x.rem}};
+        //return udivrem_by2(na);
+    }
+
+    //return udivrem_knuth(na);
+    auto x = udivrem_knuth(na);
+    return {uint384{x.quot}, uint384{x.rem}};
+}
+
+
 }  // namespace intx

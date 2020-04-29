@@ -982,6 +982,11 @@ constexpr bool operator<(const uint384& a, const uint384& b) noexcept
     //return (a.hi < b.hi) | ((a.hi == b.hi) & (a.lo < b.lo));
 }
 
+constexpr bool operator>=(const uint384& a, const uint384& b) noexcept
+{
+    return uint512{a} >= uint512{b};
+}
+
 
 inline std::tuple<uint384, bool> add_with_carry(uint384 a, uint384 b) noexcept
 {
@@ -990,6 +995,26 @@ inline std::tuple<uint384, bool> add_with_carry(uint384 a, uint384 b) noexcept
     return {s, k};
 }
 
+/*
+div_result<uint384> udivrem(const uint384& u, const uint384& v) noexcept
+{
+    auto na = normalize(u, v);
+
+
+    if (na.num_denominator_words > na.num_numerator_words)
+        return {0, u};
+
+    if (na.num_denominator_words == 1)
+        return udivrem_by1(na);
+
+    if (na.num_denominator_words == 2)
+        return udivrem_by2(na);
+
+    return udivrem_knuth(na);
+    //return {x.quot.lo, x.rem.lo};
+    
+}
+*/
 
 
 
