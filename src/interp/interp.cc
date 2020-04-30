@@ -173,7 +173,7 @@ intx::uint384 BignumRsquared = intx::uint384{BignumRsquared512};
 typedef unsigned __int128 uint128_t;
 
 // montgomery_multiplication_384_non_interleaved
-void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv_ptr, uint64_t* out) {
+void montgomery_multiplication_384_non_interleaved(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv_ptr, uint64_t* out) {
   using intx::uint1024;
   using intx::uint512;
   using intx::uint384;
@@ -214,7 +214,7 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
   //std::cout << "montgomery_multiplication_256 using non-interleaved.  inv: " << intx::to_string(*inv_192) << std::endl;
 
   //uint512 res1 = *a * *b; // results in a 384-bit number
-  uint512 res1 = uint512{*a} * uint512{*b};
+  //uint512 res1 = uint512{*a} * uint512{*b};
   uint1024 res1_1024 = uint1024{*a} * uint1024{*b};
   //std::cout << "res1_1024.lo: " << intx::to_string(res1_1024.lo) << std::endl;
   //std::cout << "res1_1024.hi: " << intx::to_string(res1_1024.hi) << std::endl;
@@ -222,8 +222,8 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
 
   //std::cout << "res1: " << intx::to_string(res1) << std::endl;
   //auto k0 = ((inv * res1).lo).lo;
-  uint512 res1_times_inv = uint512{*inv_192} * res1;
-  //uint512 res1_times_inv = uint512{*inv_192} * uint512{res1_1024.lo};
+  //uint512 res1_times_inv = uint512{*inv_192} * res1;
+  uint512 res1_times_inv = uint512{*inv_192} * uint512{res1_1024.lo};
 
   //std::cout << "res1_times_inv: " << intx::to_string(res1_times_inv) << std::endl;
   // intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo}
@@ -295,6 +295,7 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
   out[1] = result_low_128.hi;
   out[2] = result_high_128.lo;
   out[3] = result_high_128.hi;
+  //out[0] = result.lo; // TODO: try using a pointer? reinterpret_cast<uint64_t*>
   out[4] = result_hi_256_low_128.lo;
   out[5] = result_hi_256_low_128.hi;
 }
@@ -302,8 +303,82 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
 
 
 
+inline uint8_t less_than_or_equal384_64bitlimbs(const uint64_t* const x, const uint64_t* const y){
+  for (int i=(384/64)-1;i>=0;i--){
+    if (x[i]>y[i])
+      return 0;
+    else if (x[i]<y[i])
+      return 1;
+  }
+
+  return 1;
+}
 
 
+
+inline void subtract384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y){
+  uint64_t carry=0;
+#pragma unroll
+  for (int i=0; i<(384/64);i++){
+    uint64_t temp = x[i]-carry;
+    out[i] = temp-y[i];
+    carry = (temp<y[i] || x[i]<carry) ? 1:0;
+  }
+}
+
+
+
+
+// montmul384_64bitlimbs
+void montgomery_multiplication_384(const uint64_t* const x, const uint64_t* const y, const uint64_t* const m, const uint64_t* const inv, uint64_t* const out){
+  //using __uint128_t = interp::uint128_t;
+  // (384/64)*2+1 = 13
+  uint64_t A[(384/64)*2+1];
+  for (int i=0;i<(384/64)*2+1;i++)
+    A[i]=0;
+
+  for (int i=0; i<(384/64); i++){
+    uint64_t ui = (A[i]+x[i]*y[0])*inv[0];
+    uint64_t carry = 0;
+#pragma unroll
+    for (int j=0; j<(384/64); j++){
+      interp::uint128_t xiyj = (interp::uint128_t)x[i]*y[j];
+      interp::uint128_t uimj = (interp::uint128_t)ui*m[j];
+      interp::uint128_t partial_sum = xiyj+carry+A[i+j];
+      interp::uint128_t sum = uimj+partial_sum;
+      A[i+j] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+j+k<(384/64)*2 && A[i+j+k]==(uint64_t)0-1 ){
+          A[i+j+k]=0;
+          k++;
+        }
+        if (i+j+k<(384/64)*2+1)
+          A[i+j+k]+=1;
+      }
+
+    }
+    A[i+(384/64)]+=carry;
+  }
+
+
+
+  for (int i=0; i<(384/64);i++)
+    out[i] = A[i+(384/64)];
+
+
+  if (A[(384/64)*2]>0 || less_than_or_equal384_64bitlimbs(m,out))
+    subtract384_64bitlimbs(out, out, m);
+
+}
+
+
+
+
+
+/*
 void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64_t* inv, uint64_t *out){
 
   uint64_t A[] = {0,0,0,0,0,0,0,0,0}; // we need 9 64-bit limbs, the 9th limb in case x*y (before subtracting the modulus) is greater than 256 bits
@@ -384,7 +459,7 @@ void montgomery_multiplication_256(uint64_t* x, uint64_t* y, uint64_t* m, uint64
     // on i=4, if out[4] is 1, then subtracting the modulus will lead to subtracting the last carry bit from out[4]
   }
 }
-
+*/
 
 
 
@@ -2575,7 +2650,7 @@ Result Thread::Run(int num_instructions) {
       }
 
 
-      /*
+
       case Opcode::EwasmF1mToMont: {
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2593,7 +2668,7 @@ Result Thread::Run(int num_instructions) {
 
         break;
       }
-      */
+
 
 
       /**** Frm bignum funcs. These replicate websnark's Frm_* functions (`m` stands for montgomery, `r` refers to using the order of the curve group as the modulus rather than the base field) ****/
