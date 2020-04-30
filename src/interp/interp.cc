@@ -17,6 +17,7 @@
 #include "src/interp/interp.h"
 #include <iostream>
 
+#include <chrono>
 #include <intx/intx.hpp>
 
 #include <algorithm>
@@ -167,6 +168,24 @@ intx::uint384 BignumRsquared = intx::uint384{BignumRsquared512};
 //intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("18446752466076602529");
 
 
+using chrono_clock = std::chrono::high_resolution_clock;
+
+using namespace std::chrono_literals;
+std::chrono::nanoseconds montmul_duration = 0ns;
+
+std::chrono::nanoseconds f1m_mul_duration = 0ns;
+std::chrono::nanoseconds f1m_square_duration = 0ns;
+std::chrono::nanoseconds f1m_add_duration = 0ns;
+std::chrono::nanoseconds f1m_sub_duration = 0ns;
+std::chrono::nanoseconds int_mul_duration = 0ns;
+std::chrono::nanoseconds int_sub_duration = 0ns;
+std::chrono::nanoseconds int_add_duration = 0ns;
+std::chrono::nanoseconds int_div_duration = 0ns;
+
+
+constexpr auto to_ns = [](chrono_clock::duration d) {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
+};
 
 
 
@@ -303,6 +322,45 @@ void montgomery_multiplication_384_non_interleaved(uint64_t* x, uint64_t* y, uin
 
 
 
+inline void mul384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y){
+  uint64_t* w = out;
+  for (int i=0; i<2*(384/64); i++)
+    w[i]=0;
+  for (int i=0; i<(384/64); i++){
+    uint64_t c = 0;
+    for (int j=0; j<(384/64); j++){
+      __uint128_t uv = (__uint128_t)w[i+j] + (__uint128_t)x[j]*y[i];
+      uv += c;
+      __uint128_t u = uv >> 64;
+      uint64_t v = uv;
+      w[i+j] = v;
+      c = u;
+    }
+    w[i+(384/64)] = c;
+  }
+
+
+}
+
+
+
+
+
+inline void add384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y){
+  uint64_t carry=0;
+#pragma unroll
+  for (int i=0; i<(384/64);i++){
+    //std::cout << "add384_64bitlimbs.  i=" << i << "  y[i]=" << y[i] << std::endl;
+    //std::cout << "add384_64bitlimbs.  i=" << i << "  x[i]=" << x[i] << std::endl;
+    //std::cout << "add384_64bitlimbs.  i=" << i << "  carry=" << carry << std::endl;
+    uint64_t temp = x[i]+y[i]+carry;
+    carry = x[i] > temp ? 1:0;
+    out[i]=temp;
+    //std::cout << "add384_64bitlimbs.  i=" << i << "  out[i]=" << x[i] << std::endl;
+  }
+}
+
+
 inline uint8_t less_than_or_equal384_64bitlimbs(const uint64_t* const x, const uint64_t* const y){
   for (int i=(384/64)-1;i>=0;i--){
     if (x[i]>y[i])
@@ -320,9 +378,17 @@ inline void subtract384_64bitlimbs(uint64_t* const out, const uint64_t* const x,
   uint64_t carry=0;
 #pragma unroll
   for (int i=0; i<(384/64);i++){
+
+    uint64_t out_temp = x[i]-y[i]-carry;
+    carry = (x[i]<y[i] || y[i]<carry) ? 1:0;
+    out[i] = out_temp;
+
+
+    /*
     uint64_t temp = x[i]-carry;
     out[i] = temp-y[i];
     carry = (temp<y[i] || x[i]<carry) ? 1:0;
+    */
   }
 }
 
@@ -331,6 +397,8 @@ inline void subtract384_64bitlimbs(uint64_t* const out, const uint64_t* const x,
 
 // montmul384_64bitlimbs
 void montgomery_multiplication_384(const uint64_t* const x, const uint64_t* const y, const uint64_t* const m, const uint64_t* const inv, uint64_t* const out){
+  const auto start_time = chrono_clock::now();
+
   //using __uint128_t = interp::uint128_t;
   // (384/64)*2+1 = 13
   uint64_t A[(384/64)*2+1];
@@ -372,6 +440,10 @@ void montgomery_multiplication_384(const uint64_t* const x, const uint64_t* cons
   if (A[(384/64)*2]>0 || less_than_or_equal384_64bitlimbs(m,out))
     subtract384_64bitlimbs(out, out, m);
 
+  const auto end_time = chrono_clock::now();
+  //std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time)
+  //std::chrono::microseconds one_loop = (end_time - start_time);
+  montmul_duration = montmul_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 }
 
 
@@ -2396,21 +2468,35 @@ Result Thread::Run(int num_instructions) {
       /**** Int256 bignum funcs. These replicate websnark's int_* functions ****/
 
       case Opcode::EwasmInt256Mul: {
+        const auto start_time = chrono_clock::now();
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
+        /*
         intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
         intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
         intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
 
         *ret_mem = *a * *b;
+        */
+
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
+        uint64_t* out = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        mul384_64bitlimbs(out, a, b);
+        
+        const auto end_time = chrono_clock::now();
+        int_mul_duration = int_mul_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 
         break;
       }
 
       case Opcode::EwasmInt256Div: {
+        const auto start_time = chrono_clock::now();
+        //std::cout << "EwasmInt256Div." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>(); // ret is the remainder
         uint32_t c_offset = Pop<uint32_t>(); // c param is the quotient
         uint32_t b_offset = Pop<uint32_t>();
@@ -2427,12 +2513,16 @@ Result Thread::Run(int num_instructions) {
         const auto div_res = udivrem(*a, *b);
         *ret_quotient_mem = intx::uint384{div_res.quot};
         *ret_remainder_mem = intx::uint384{div_res.rem};
+        
+        const auto end_time = chrono_clock::now();
+        int_div_duration = int_div_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 
         break;
       }
 
       // Int384Add
       case Opcode::EwasmInt256Add: {
+        const auto start_time = chrono_clock::now();
         //std::cout << "EwasmInt384Add." << std::endl;
 
         uint32_t ret_offset = Pop<uint32_t>();
@@ -2463,11 +2553,14 @@ Result Thread::Run(int num_instructions) {
         //std::cout << "EwasmInt384Add.  result: " << intx::to_string(std::get<0>(add_res)) << std::endl;
 
         Push<uint32_t>(carry);
+        const auto end_time = chrono_clock::now();
+        int_add_duration = int_add_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 
         break;
       }
 
       case Opcode::EwasmInt256Sub: {
+        const auto start_time = chrono_clock::now();
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2485,6 +2578,9 @@ Result Thread::Run(int num_instructions) {
         *ret_mem = *a - *b;
 
         Push<uint32_t>(carry);
+        
+        const auto end_time = chrono_clock::now();
+        int_sub_duration = int_sub_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 
         break;
       }
@@ -2524,18 +2620,65 @@ Result Thread::Run(int num_instructions) {
       }
       */
 
+/*
+void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y, const uint64_t* const m){
+  add384_64bitlimbs(out, x, y);
+  if (less_than_or_equal384_64bitlimbs(m,out)){
+    subtract384_64bitlimbs(out, m, out);
+  }
+}
+*/
+
       case Opcode::EwasmF1mAdd: {
+        const auto start_time = chrono_clock::now();
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
 
         Memory* mem = &env_->memories_[0];
+        /*
         intx::uint384* a = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
         intx::uint384* b = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
         intx::uint384* ret_mem = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
+        */
 
-        intx::uint384 ret = *a + *b;
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
+
+        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        uint64_t* out = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
+        //intx::uint384* b_intx = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
+        //std::cout << "EwasmF1mAdd.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
+
+
         //intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
+
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
+
+
+
+        add384_64bitlimbs(out, a, b);
+
+        //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(out);
+
+        //std::cout << "EwasmF1mAdd.  add result (before subtracting):" << intx::to_string(*ret_intx) << std::endl;
+
+        // less_than_or_equal384_64bitlimbs(mod, out) or less_than_or_equal384_64bitlimbs(out, mod)
+
+        if (less_than_or_equal384_64bitlimbs(mod, out)){
+          //std::cout << "EwasmF1mAdd.  sum greater than mod. doing subtraction..." << std::endl;
+          subtract384_64bitlimbs(out, out, mod);
+        }
+          //std::cout << "EwasmF1mAdd.  sum less than mod." << std::endl;
+
+
+        //std::cout << "EwasmF1mAdd.  result:" << intx::to_string(*ret_intx) << std::endl;
+
+
+        /*
+        intx::uint384 ret = *a + *b;
 
         if (ret >= wabt::interp::BignumModulus) {
           //ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
@@ -2543,12 +2686,16 @@ Result Thread::Run(int num_instructions) {
         }
 
         *ret_mem = ret;
+        */
 
+        const auto end_time = chrono_clock::now();
+        f1m_add_duration = f1m_add_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
         break;
       }
 
 
       case Opcode::EwasmF1mSub: {
+        const auto start_time = chrono_clock::now();
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2565,10 +2712,28 @@ Result Thread::Run(int num_instructions) {
           *ret_mem = *a - *b;
         }
 
+
+        /*
+        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
+        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
+        uint64_t* out = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
+
+        if (less_than_or_equal384_64bitlimbs(a, b)){
+          add384_64bitlimbs(out, a, b);
+        }
+
+        subtract384_64bitlimbs(out, a, b);
+        */
+
+
+        const auto end_time = chrono_clock::now();
+        f1m_sub_duration = f1m_sub_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+
         break;
       }
 
       case Opcode::EwasmF1mMul: {
+        const auto start_time = chrono_clock::now();
         //std::cout << "EwasmF1mMul." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t b_offset = Pop<uint32_t>();
@@ -2593,10 +2758,13 @@ Result Thread::Run(int num_instructions) {
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
         //std::cout << "Ewasmf1mMul.  result:" << intx::to_string(*ret_intx) << std::endl;
 
+        const auto end_time = chrono_clock::now();
+        f1m_mul_duration = f1m_mul_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
         break;
       }
 
       case Opcode::EwasmF1mSquare: {
+        const auto start_time = chrono_clock::now();
         //std::cout << "EwasmF1mSquare." << std::endl;
         uint32_t ret_offset = Pop<uint32_t>();
         uint32_t a_offset = Pop<uint32_t>();
@@ -2619,7 +2787,8 @@ Result Thread::Run(int num_instructions) {
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
         //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*ret_intx) << std::endl;
 
-
+        const auto end_time = chrono_clock::now();
+        f1m_square_duration = f1m_square_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
         break;
       }
 
@@ -4100,6 +4269,22 @@ ExecResult Executor::RunFunction(Index func_index, const TypedValues& args) {
       CopyResults(sig, &exec_result.values);
     }
   }
+
+
+  std::cout << "cumulative montmul time: " << std::dec << to_ns(montmul_duration) << "ns\n";
+  std::cout << "cumulative f1m_mul time: " << std::dec << to_ns(f1m_mul_duration) << "ns\n";
+  std::cout << "cumulative f1m_square time: " << std::dec << to_ns(f1m_square_duration) << "ns\n";
+  std::cout << "cumulative f1m_add time: " << std::dec << to_ns(f1m_add_duration) << "ns\n";
+  std::cout << "cumulative f1m_sub time: " << std::dec << to_ns(f1m_sub_duration) << "ns\n";
+  std::cout << "cumulative int_add time: " << std::dec << to_ns(int_add_duration) << "ns\n";
+  std::cout << "cumulative int_mul time: " << std::dec << to_ns(int_mul_duration) << "ns\n";
+  std::cout << "cumulative int_div time: " << std::dec << to_ns(int_div_duration) << "ns\n";
+  std::cout << "cumulative int_sub time: " << std::dec << to_ns(int_sub_duration) << "ns\n";
+
+
+  const auto total_hostfunc_time = f1m_mul_duration + f1m_square_duration + f1m_add_duration + f1m_sub_duration
+   + int_add_duration + int_mul_duration + int_div_duration + int_sub_duration;
+  std::cout << "cumulative time in bignum host funcs: " << std::dec << to_ns(total_hostfunc_time) << "ns\n";
 
   return exec_result;
 }
