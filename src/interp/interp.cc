@@ -133,6 +133,10 @@ intx::uint256 Mask192 = intx::from_string<intx::uint256>("6277101735386680763835
 intx::uint512 BignumModulus512 = intx::from_string<intx::uint512>("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787");
 intx::uint384 BignumModulus = intx::uint384{BignumModulus512};
 
+uint64_t* BignumModulusPointer = reinterpret_cast<uint64_t*>(&BignumModulus512);
+
+
+
 // Inv192 = 0x16ef2ef0c8e30b48286adb92d9d113e889f3fffcfffcfffd
 intx::uint256 BignumInv192 = intx::from_string<intx::uint256>("562347645077012667207365078502783620839491177873185505277");
 // R_squared = 0x11988fe592cae3aa9a793e85b519952d67eb88a9939d83c08de5476c4c95b6d50a76e6a609d104f1f4df1f341c341746
@@ -181,6 +185,7 @@ std::chrono::nanoseconds int_mul_duration = 0ns;
 std::chrono::nanoseconds int_sub_duration = 0ns;
 std::chrono::nanoseconds int_add_duration = 0ns;
 std::chrono::nanoseconds int_div_duration = 0ns;
+std::chrono::nanoseconds dummy_duration = 0ns;
 
 
 constexpr auto to_ns = [](chrono_clock::duration d) {
@@ -345,7 +350,6 @@ inline void mul384_64bitlimbs(uint64_t* const out, const uint64_t* const x, cons
 
 
 
-
 inline void add384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y){
   uint64_t carry=0;
 #pragma unroll
@@ -358,6 +362,22 @@ inline void add384_64bitlimbs(uint64_t* const out, const uint64_t* const x, cons
     out[i]=temp;
     //std::cout << "add384_64bitlimbs.  i=" << i << "  out[i]=" << x[i] << std::endl;
   }
+}
+
+
+inline bool greater_than_or_equal384_64bitlimbs(const uint64_t* const x, const uint64_t* const y){
+  for (int i=(384/64)-1;i>=0;i--){
+    // TODO: the last element in the array of 64-bit limbs is the most signficant or least?
+    //std::cout << "greater_than_or_equal384_64bitlimbs.  i=" << i << "  x[i]=" << x[i] << std::endl;
+    //std::cout << "greater_than_or_equal384_64bitlimbs.  i=" << i << "  y[i]=" << y[i] << std::endl;
+    if (x[i]>y[i])
+      return true;
+    else if (x[i]<y[i])
+      return false;
+    // else they're equal, continue..
+  }
+
+  return true; // they're equal
 }
 
 
@@ -374,11 +394,15 @@ inline uint8_t less_than_or_equal384_64bitlimbs(const uint64_t* const x, const u
 
 
 
+
 inline void subtract384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y){
-  uint64_t carry=0;
+ //uint64_t carrySubGlobal=0;
+ uint64_t carry=0;
+
 #pragma unroll
   for (int i=0; i<(384/64);i++){
 
+    // out_temp in case x or y is out
     uint64_t out_temp = x[i]-y[i]-carry;
     carry = (x[i]<y[i] || y[i]<carry) ? 1:0;
     out[i] = out_temp;
@@ -393,11 +417,103 @@ inline void subtract384_64bitlimbs(uint64_t* const out, const uint64_t* const x,
 }
 
 
+//uint64_t carryAddGlobal[6];
+
+inline void addmod384_64bitlimbs(uint64_t* out, uint64_t* x, uint64_t* y,  uint64_t* mod){
+  uint64_t carry=0;
+  uint64_t temp=0;
+  //carryAddGlobal[0] = 0;
+
+
+
+#pragma unroll
+  for (int i=0; i<(384/64);i++){
+    temp = x[i]+y[i]+carry;
+    carry = x[i] > temp ? 1:0;
+    out[i]=temp;
+  }
+
+
+
+/*
+  uint64_t temp = 0;
+  temp = x[0]+y[0];
+  carry = x[0] > temp ? 1:0;
+  out[0]=temp;
+
+  temp = x[1]+y[1] + carry;
+  carry = x[1] > temp ? 1:0;
+  out[1]=temp;
+
+  temp = x[2]+y[2] + carry;
+  carry = x[2] > temp ? 1:0;
+  out[2]=temp;
+
+  temp = x[3]+y[3] + carry;
+  carry = x[3] > temp ? 1:0;
+  out[3]=temp;
+
+  temp = x[4]+y[4] + carry;
+  carry = x[4] > temp ? 1:0;
+  out[4]=temp;
+
+  out[5] = x[5]+y[5] + carry;
+*/
+
+
+#pragma unroll
+  for (int i=(384/64)-1;i>=0;i--){
+    if (out[i]>mod[i]) {
+
+      // begin subtraction
+      //uint64_t subcarry1=0;
+      carry = 0;
+    #pragma unroll
+      for (int i=0; i<(384/64);i++){
+        temp = out[i]-mod[i]-carry;
+        carry = (out[i]<mod[i] || mod[i]<carry) ? 1:0;
+        out[i] = temp;
+      }
+      // end subtraction
+      //subtract384_64bitlimbs(out, out, mod);
+
+      return;
+    }
+    else if (out[i]<mod[i]) {
+      // no subtraction needed
+      return;
+    }
+  }
+
+  // x and y are equal, so subtract
+
+  // begin subtraction
+  carry = 0;
+#pragma unroll
+  for (int i=0; i<(384/64);i++){
+    temp = out[i]-mod[i]-carry;
+    carry = (out[i]<mod[i] || mod[i]<carry) ? 1:0;
+    out[i] = temp;
+  }
+  // end subtraction
+
+  //subtract384_64bitlimbs(out, out, mod);
+
+  return;
+
+}
+
+inline void host_func_dummy() {
+  const auto start_time = chrono_clock::now();
+  const auto end_time = chrono_clock::now();
+  dummy_duration = dummy_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+}
+
 
 
 // montmul384_64bitlimbs
-void montgomery_multiplication_384(const uint64_t* const x, const uint64_t* const y, const uint64_t* const m, const uint64_t* const inv, uint64_t* const out){
-  const auto start_time = chrono_clock::now();
+inline void montgomery_multiplication_384(const uint64_t* const x, const uint64_t* const y, const uint64_t* const m, const uint64_t* const inv, uint64_t* const out){
+  //const auto start_time = chrono_clock::now();
 
   //using __uint128_t = interp::uint128_t;
   // (384/64)*2+1 = 13
@@ -440,10 +556,10 @@ void montgomery_multiplication_384(const uint64_t* const x, const uint64_t* cons
   if (A[(384/64)*2]>0 || less_than_or_equal384_64bitlimbs(m,out))
     subtract384_64bitlimbs(out, out, m);
 
-  const auto end_time = chrono_clock::now();
+  //const auto end_time = chrono_clock::now();
   //std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time)
   //std::chrono::microseconds one_loop = (end_time - start_time);
-  montmul_duration = montmul_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+  //montmul_duration = montmul_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 }
 
 
@@ -2645,7 +2761,7 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
         uint64_t* out = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
         //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
@@ -2658,8 +2774,14 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
 
+        addmod384_64bitlimbs(out, a, b, BignumModulusPointer);
 
+        /*
         add384_64bitlimbs(out, a, b);
+        if (greater_than_or_equal384_64bitlimbs(out, BignumModulusPointer)){
+          subtract384_64bitlimbs(out, out, BignumModulusPointer);
+        }
+        */
 
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(out);
 
@@ -2667,10 +2789,10 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
 
         // less_than_or_equal384_64bitlimbs(mod, out) or less_than_or_equal384_64bitlimbs(out, mod)
 
-        if (less_than_or_equal384_64bitlimbs(mod, out)){
+        //if (less_than_or_equal384_64bitlimbs(mod, out)){
+        
           //std::cout << "EwasmF1mAdd.  sum greater than mod. doing subtraction..." << std::endl;
-          subtract384_64bitlimbs(out, out, mod);
-        }
+
           //std::cout << "EwasmF1mAdd.  sum less than mod." << std::endl;
 
 
@@ -2690,6 +2812,8 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
 
         const auto end_time = chrono_clock::now();
         f1m_add_duration = f1m_add_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+
+        host_func_dummy();
         break;
       }
 
@@ -4280,6 +4404,7 @@ ExecResult Executor::RunFunction(Index func_index, const TypedValues& args) {
   std::cout << "cumulative int_mul time: " << std::dec << to_ns(int_mul_duration) << "ns\n";
   std::cout << "cumulative int_div time: " << std::dec << to_ns(int_div_duration) << "ns\n";
   std::cout << "cumulative int_sub time: " << std::dec << to_ns(int_sub_duration) << "ns\n";
+  std::cout << "cumulative dummy_func time: " << std::dec << to_ns(dummy_duration) << "ns\n";
 
 
   const auto total_hostfunc_time = f1m_mul_duration + f1m_square_duration + f1m_add_duration + f1m_sub_duration
