@@ -97,6 +97,21 @@ void WriteTypedValues(Stream* stream, const TypedValues& values) {
 }
 
 
+/*
+using chrono_clock = std::chrono::high_resolution_clock;
+
+constexpr auto to_us = [](chrono_clock::duration d) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+};
+*/
+
+/*
+const auto parseStartTime = chrono_clock::now();
+const auto execFinishTime = chrono_clock::now();
+const auto execDuration = execFinishTime - execStartTime;
+std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
+std::cout << "exec time: " << std::dec << to_us(execDuration) << "us\n";
+*/
 
 /***** Bignum constants are used in the bignum functions ****/
 
@@ -208,6 +223,7 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
   //std::cout << "res1: " << intx::to_string(res1) << std::endl;
   //auto k0 = ((inv * res1).lo).lo;
   uint512 res1_times_inv = uint512{*inv_192} * res1;
+  //uint512 res1_times_inv = uint512{*inv_192} * uint512{res1_1024.lo};
 
   //std::cout << "res1_times_inv: " << intx::to_string(res1_times_inv) << std::endl;
   // intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo}
@@ -221,14 +237,14 @@ void montgomery_multiplication_384(uint64_t* x, uint64_t* y, uint64_t* m, uint64
   // 6a135e6cfc2c8c6c33672a3bfb8e939a
   // 13dc9c4146bc94a96a135e6cfc2c8c6c33672a3bfb8e939a
   //std::cout << "mod: " << intx::to_string(uint512{*mod}) << std::endl;
-  uint1024 k0_times_mod = uint1024{k0} * uint1024{*mod};
+  //uint1024 k0_times_mod = uint1024{k0} * uint1024{*mod};
   //std::cout << "k0_times_mod.lo: " << intx::to_string(k0_times_mod.lo) << std::endl;
-  uint1024 k0_times_mod_plus_res1 = k0_times_mod + uint1024{res1_1024};
+  //uint1024 k0_times_mod_plus_res1 = k0_times_mod + uint1024{res1_1024};
   //std::cout << "k0_times_mod_plus_res1.lo: " << intx::to_string(k0_times_mod_plus_res1.lo) << std::endl;
 
 
   //uint1024 res2 = ((uint1024{k0} * uint1024{*mod}) + res1) >> 192;
-  uint1024 res2_before_shift = ((uint1024{k0} * uint1024{*mod}) + res1_1024);
+  //uint1024 res2_before_shift = ((uint1024{k0} * uint1024{*mod}) + res1_1024);
   //std::cout << "res2_before_shift.lo: " << intx::to_string(res2_before_shift.lo) << std::endl;
   //std::cout << "res2_before_shift.hi: " << intx::to_string(res2_before_shift.hi) << std::endl;
 
