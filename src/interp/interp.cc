@@ -138,7 +138,12 @@ uint64_t* BignumModulusPointer = reinterpret_cast<uint64_t*>(&BignumModulus512);
 
 
 // Inv192 = 0x16ef2ef0c8e30b48286adb92d9d113e889f3fffcfffcfffd
-intx::uint256 BignumInv192 = intx::from_string<intx::uint256>("562347645077012667207365078502783620839491177873185505277");
+// BignumInv192 used for montgomery_multiplication_384_non_interleaved
+//intx::uint256 BignumInv192 = intx::from_string<intx::uint256>("562347645077012667207365078502783620839491177873185505277");
+intx::uint256 BignumInv64 = intx::from_string<intx::uint256>("9940570264628428797");
+
+uint64_t* BignumInvPointer = reinterpret_cast<uint64_t*>(&BignumInv64);
+
 // R_squared = 0x11988fe592cae3aa9a793e85b519952d67eb88a9939d83c08de5476c4c95b6d50a76e6a609d104f1f4df1f341c341746
 intx::uint512 BignumRsquared512 = intx::from_string<intx::uint512>("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750");
 intx::uint384 BignumRsquared = intx::uint384{BignumRsquared512};
@@ -2867,9 +2872,10 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        //BignumInv192
         //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
@@ -2877,7 +2883,7 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //intx::uint384* b_intx = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
         //std::cout << "Ewasmf1mMul.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
 
-        montgomery_multiplication_384(a, b, mod, inv, ret);
+        montgomery_multiplication_384(a, b, BignumModulusPointer, BignumInvPointer, ret);
 
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
         //std::cout << "Ewasmf1mMul.  result:" << intx::to_string(*ret_intx) << std::endl;
