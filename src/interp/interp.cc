@@ -150,33 +150,6 @@ intx::uint384 BignumRsquared = intx::uint384{BignumRsquared512};
 
 
 
-// for bn128
-// modulus = 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
-// inv = 0x9ede7d651eca6ac987d20782e4866389
-// r_squared = 0x06d89f71cab8351f47ab1eff0a417ff6b5e71911d44501fbf32cfc5b538afa89
-//intx::uint256 BignumModulus = intx::from_string<intx::uint256>("21888242871839275222246405745257275088696311157297823662689037894645226208583");
-//intx::uint256 BignumInv = intx::from_string<intx::uint256>("211173256549385567650468519415768310665");
-//intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("3096616502983703923843567936837374451735540968419076528771170197431451843209");
-
-
-// for bn128 used by daquiri (bn128 Fr constants, as opposed to Fq)
-// modulus = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
-// inv = 0x6586864b4c6911b3c2e1f593efffffff
-// r_squared = 0x0216d0b17f4e44a58c49833d53bb808553fe3ab1e35c59e31bb8e645ae216da7
-//intx::uint256 BignumModulusFr = intx::from_string<intx::uint256>("21888242871839275222246405745257275088548364400416034343698204186575808495617");
-//intx::uint256 BignumInvFr = intx::from_string<intx::uint256>("134950519161967129512891662437158223871");
-//intx::uint256 BignumRsquaredFr = intx::from_string<intx::uint256>("944936681149208446651664254269745548490766851729442924617792859073125903783");
-
-
-// for secp256k1
-// modulus = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
-// inv = 0xbcb223fedc24a059d838091dd2253531
-// r_squared = 0x1000007a2000e90a1
-//intx::uint256 BignumModulus = intx::from_string<intx::uint256>("115792089237316195423570985008687907853269984665640564039457584007908834671663");
-//intx::uint256 BignumInv = intx::from_string<intx::uint256>("250819822124803770581580479000962479409");
-//intx::uint256 BignumRsquared = intx::from_string<intx::uint256>("18446752466076602529");
-
-
 using chrono_clock = std::chrono::high_resolution_clock;
 
 using namespace std::chrono_literals;
@@ -438,32 +411,6 @@ inline void addmod384_64bitlimbs(uint64_t* out, uint64_t* x, uint64_t* y,  uint6
     out[i]=temp;
   }
 
-
-
-/*
-  uint64_t temp = 0;
-  temp = x[0]+y[0];
-  carry = x[0] > temp ? 1:0;
-  out[0]=temp;
-
-  temp = x[1]+y[1] + carry;
-  carry = x[1] > temp ? 1:0;
-  out[1]=temp;
-
-  temp = x[2]+y[2] + carry;
-  carry = x[2] > temp ? 1:0;
-  out[2]=temp;
-
-  temp = x[3]+y[3] + carry;
-  carry = x[3] > temp ? 1:0;
-  out[3]=temp;
-
-  temp = x[4]+y[4] + carry;
-  carry = x[4] > temp ? 1:0;
-  out[4]=temp;
-
-  out[5] = x[5]+y[5] + carry;
-*/
 
 
 #pragma unroll
@@ -3177,47 +3124,6 @@ Result Thread::Run(int num_instructions) {
 
       /**** F1m bignum funcs. These replicate websnark's F1m_* functions (m stands for montgomery, and F1 refers using the base field `q` as the modulus) ****/
 
-      /*
-      case Opcode::EwasmF1mAdd: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t b_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        intx::uint512* a_512 = reinterpret_cast<intx::uint512*>(&(mem->data[a_offset]));
-        intx::uint512* b_512 = reinterpret_cast<intx::uint512*>(&(mem->data[b_offset]));
-
-        intx::uint512 a_384 = intx::uint512{intx::uint256{0, (a_512->hi).lo}, a_512->lo};
-        intx::uint512 b_384 = intx::uint512{intx::uint256{0, (b_512->hi).lo}, b_512->lo};
-
-        intx::uint256* ret_mem_lo_256 = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-        intx::uint128* ret_mem_hi_128 = reinterpret_cast<intx::uint128*>(&(mem->data[ret_offset + 128])); // TODO: plus 128 or minus 128?
-
-
-        intx::uint512 ret_512 = a_384 + b_384;
-        //intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
-
-        if (ret_512 >= wabt::interp::BignumModulus) {
-          //ret_full -= intx::uint512{0, wabt::interp::BignumModulus};
-          ret_512 -= wabt::interp::BignumModulus;
-        }
-
-        *ret_mem_lo_256 = ret_512.lo;
-        *ret_mem_hi_128 = ret_512.hi.lo;
-
-        break;
-      }
-      */
-
-/*
-void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const uint64_t* const y, const uint64_t* const m){
-  add384_64bitlimbs(out, x, y);
-  if (less_than_or_equal384_64bitlimbs(m,out)){
-    subtract384_64bitlimbs(out, m, out);
-  }
-}
-*/
-
       case Opcode::EwasmF1mAdd: {
         //const auto start_time = chrono_clock::now();
         uint32_t ret_offset = Pop<uint32_t>();
@@ -3241,36 +3147,10 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //intx::uint384* b_intx = reinterpret_cast<intx::uint384*>(&(mem->data[b_offset]));
         //std::cout << "EwasmF1mAdd.  a: " << intx::to_string(*a_intx) << "  b: " << intx::to_string(*b_intx) << std::endl;
 
-
-        //intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
-
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
-
-
         addmod384_64bitlimbs(out, a, b, BignumModulusPointer);
 
-        /*
-        add384_64bitlimbs(out, a, b);
-        if (greater_than_or_equal384_64bitlimbs(out, BignumModulusPointer)){
-          subtract384_64bitlimbs(out, out, BignumModulusPointer);
-        }
-        */
-
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(out);
-
-        //std::cout << "EwasmF1mAdd.  add result (before subtracting):" << intx::to_string(*ret_intx) << std::endl;
-
-        // less_than_or_equal384_64bitlimbs(mod, out) or less_than_or_equal384_64bitlimbs(out, mod)
-
-        //if (less_than_or_equal384_64bitlimbs(mod, out)){
-        
-          //std::cout << "EwasmF1mAdd.  sum greater than mod. doing subtraction..." << std::endl;
-
-          //std::cout << "EwasmF1mAdd.  sum less than mod." << std::endl;
-
-
         //std::cout << "EwasmF1mAdd.  result:" << intx::to_string(*ret_intx) << std::endl;
-
 
         /*
         intx::uint384 ret = *a + *b;
@@ -3286,7 +3166,6 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //const auto end_time = chrono_clock::now();
         //f1m_add_duration = f1m_add_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
 
-        //host_func_dummy();
         break;
       }
 
@@ -3340,11 +3219,6 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
 
-        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        //BignumInv192
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
-
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
         //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
@@ -3360,203 +3234,6 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //f1m_mul_duration = f1m_mul_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
         break;
       }
-
-      case Opcode::EwasmF1mSquare: {
-        //const auto start_time = chrono_clock::now();
-        //std::cout << "EwasmF1mSquare." << std::endl;
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-
-        //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
-        //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*a_intx) << std::endl;
-
-
-        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_384(a, a, BignumModulusPointer, BignumInvPointer, ret);
-
-        //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
-        //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*ret_intx) << std::endl;
-
-        //const auto end_time = chrono_clock::now();
-        //f1m_square_duration = f1m_square_duration + std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-        break;
-      }
-
-
-      case Opcode::EwasmF1mFromMont: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumOne);
-
-        //intx::uint384* a_intx = reinterpret_cast<intx::uint384*>(&(mem->data[a_offset]));
-        //std::cout << "EwasmF1mFromMont.  a:" << intx::to_string(*a_intx) << std::endl;
-
-
-        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_384(a, b, BignumModulusPointer, BignumInvPointer, ret);
-
-        //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
-        //std::cout << "EwasmF1mFromMont.  result:" << intx::to_string(*ret_intx) << std::endl;
-
-        break;
-      }
-
-
-
-      case Opcode::EwasmF1mToMont: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumRsquared);
-
-        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_384(a, b, BignumModulusPointer, BignumInvPointer, ret);
-
-        break;
-      }
-
-
-
-      /**** Frm bignum funcs. These replicate websnark's Frm_* functions (`m` stands for montgomery, `r` refers to using the order of the curve group as the modulus rather than the base field) ****/
-      /*
-      case Opcode::EwasmFrmMul: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t b_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&(mem->data[b_offset]));
-
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulusFr);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInvFr);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_256(a, b, mod, inv, ret);
-
-        break;
-      }
-
-      case Opcode::EwasmFrmSquare: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulusFr);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInvFr);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_256(a, a, mod, inv, ret);
-
-        break;
-      }
-
-      case Opcode::EwasmFrmFromMont: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumOne);
-
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulusFr);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInvFr);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_256(a, b, mod, inv, ret);
-
-        break;
-      }
-
-      case Opcode::EwasmFrmToMont: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
-        uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumRsquaredFr);
-
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulusFr);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInvFr);
-
-        uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
-
-        montgomery_multiplication_256(a, b, mod, inv, ret);
-
-        break;
-      }
-
-      case Opcode::EwasmFrmAdd: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t b_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-
-        intx::uint512 ret_full = intx::uint512{0,*a} + intx::uint512{0,*b};
-
-        if (ret_full >= wabt::interp::BignumModulusFr) {
-          ret_full -= intx::uint512{0, wabt::interp::BignumModulusFr};
-        }
-
-        *ret_mem = ret_full.lo;
-
-        break;
-      }
-
-      case Opcode::EwasmFrmSub: {
-        uint32_t ret_offset = Pop<uint32_t>();
-        uint32_t b_offset = Pop<uint32_t>();
-        uint32_t a_offset = Pop<uint32_t>();
-
-        Memory* mem = &env_->memories_[0];
-        intx::uint256* a = reinterpret_cast<intx::uint256*>(&(mem->data[a_offset]));
-        intx::uint256* b = reinterpret_cast<intx::uint256*>(&(mem->data[b_offset]));
-
-        intx::uint256* ret_mem = reinterpret_cast<intx::uint256*>(&(mem->data[ret_offset]));
-
-        if (*a < *b) {
-          *ret_mem = (*a + wabt::interp::BignumModulusFr) - *b;
-        } else {
-          *ret_mem = *a - *b;
-        }
-
-        break;
-      }
-      */
-
-
-
 
 
 
