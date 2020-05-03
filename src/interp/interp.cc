@@ -2906,13 +2906,13 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*a_intx) << std::endl;
 
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
         //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_384(a, a, mod, inv, ret);
+        montgomery_multiplication_384(a, a, BignumModulusPointer, BignumInvPointer, ret);
 
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
         //std::cout << "EwasmF1mSquare.  result:" << intx::to_string(*ret_intx) << std::endl;
@@ -2935,12 +2935,12 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         //std::cout << "EwasmF1mFromMont.  a:" << intx::to_string(*a_intx) << std::endl;
 
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
+        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_384(a, b, mod, inv, ret);
+        montgomery_multiplication_384(a, b, BignumModulusPointer, BignumInvPointer, ret);
 
         //intx::uint384* ret_intx = reinterpret_cast<intx::uint384*>(&(mem->data[ret_offset]));
         //std::cout << "EwasmF1mFromMont.  result:" << intx::to_string(*ret_intx) << std::endl;
@@ -2958,12 +2958,12 @@ void addmod384_64bitlimbs(uint64_t* const out, const uint64_t* const x, const ui
         uint64_t* a = reinterpret_cast<uint64_t*>(&(mem->data[a_offset]));
         uint64_t* b = reinterpret_cast<uint64_t*>(&wabt::interp::BignumRsquared);
 
-        uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
-        uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
+        //uint64_t* mod = reinterpret_cast<uint64_t*>(&wabt::interp::BignumModulus);
+        //uint64_t* inv = reinterpret_cast<uint64_t*>(&wabt::interp::BignumInv192);
 
         uint64_t* ret = reinterpret_cast<uint64_t*>(&(mem->data[ret_offset]));
 
-        montgomery_multiplication_384(a, b, mod, inv, ret);
+        montgomery_multiplication_384(a, b, BignumModulusPointer, BignumInvPointer, ret);
 
         break;
       }
