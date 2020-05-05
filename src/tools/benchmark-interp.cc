@@ -371,11 +371,16 @@ int main(int argc, char** argv)
       const auto now = chrono_clock::now();
       const auto parseDuration = now - parseStartTime;
       printf("parse succeeded..\n");
-      std::cout << "parse time: " << to_us(parseDuration) << "us\n";
       // test execution before running benchmark..
+      const auto execStartTime = chrono_clock::now();
       result = ExecuteModule();
-      printf("execution finished...\n");
+      const auto execFinishTime = chrono_clock::now();
+      const auto execDuration = execStartTime - execFinishTime;
+      std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+      std::cout << "exec time: " << to_us(execDuration) << "us\n";
       if (Succeeded(result)) {
+        printf("execution finished...\n");
+        
         // TODO: do we need to reset environment/memory before running benchmark?
         // or reset on every loop?
         printf("register benchmark...\n");
