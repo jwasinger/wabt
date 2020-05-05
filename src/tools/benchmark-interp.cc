@@ -269,9 +269,9 @@ static wabt::Result InstantiateModule(const char* module_filename) {
                 start_result.result);
     return wabt::Result::Error;;
   }
-  //const auto now = chrono_clock::now();
-	//const auto parseDuration = now - parseStartTime;
-  //std::cout << "parse time: " << to_us(parseDuration) << "us\n";
+  const auto now = chrono_clock::now();
+	const auto parseDuration = now - parseStartTime;
+  std::cout << "parse time: " << to_us(parseDuration) << "us\n";
 
   return result;
 }
