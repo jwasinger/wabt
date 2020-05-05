@@ -376,8 +376,8 @@ int main(int argc, char** argv)
       result = ExecuteModule();
       const auto execFinishTime = chrono_clock::now();
       const auto execDuration = execStartTime - execFinishTime;
-      std::cout << "parse time: " << to_us(parseDuration) << "us\n";
-      std::cout << "exec time: " << to_us(execDuration) << "us\n";
+      std::cout << "parse time: " << std::dec << to_us(parseDuration) << "us\n";
+      std::cout << "exec time: " << std::dec << to_us(execDuration) << "us\n";
       if (Succeeded(result)) {
         printf("execution finished...\n");
         
