@@ -48,6 +48,10 @@ using namespace wabt::interp;
 
 using chrono_clock = std::chrono::high_resolution_clock;
 
+constexpr auto to_us = [](chrono_clock::duration d) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+};
+
 static int s_verbose;
 static const char* s_infile;
 static Thread::Options s_thread_options;
