@@ -261,8 +261,6 @@ static wabt::Result InstantiateModule(const char* module_filename) {
   Errors errors;
   //DefinedModule* module = nullptr;
 
-  const auto parseStartTime = chrono_clock::now();
-
   result = ReadModule(module_filename, &env, &errors, &module);
   FormatErrorsToFile(errors, Location::Type::Binary);
 
@@ -273,9 +271,6 @@ static wabt::Result InstantiateModule(const char* module_filename) {
                 start_result.result);
     return wabt::Result::Error;;
   }
-  const auto now = chrono_clock::now();
-	const auto parseDuration = now - parseStartTime;
-  std::cout << "parse time: " << to_us(parseDuration) << "us\n";
 
   return result;
 }
@@ -370,9 +365,13 @@ int main(int argc, char** argv)
     s_stdout_stream = FileStream::CreateStdout();
     ParseOptions(argc, argv);
 
+    const auto parseStartTime = chrono_clock::now();
     wabt::Result result = InstantiateModule(s_infile);
     if (Succeeded(result)) {
+      const auto now = chrono_clock::now();
+      const auto parseDuration = now - parseStartTime;
       printf("parse succeeded..\n");
+      std::cout << "parse time: " << to_us(parseDuration) << "us\n";
       // test execution before running benchmark..
       result = ExecuteModule();
       printf("execution finished...\n");
