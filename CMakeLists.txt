@@ -291,7 +291,7 @@ if (NOT EMSCRIPTEN)
     add_executable(${EXE_NAME} ${EXE_SOURCES})
     add_dependencies(everything ${EXE_NAME})
     target_link_libraries(${EXE_NAME} ${EXE_LIBS})
-    set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 11)
+    set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 17)
     set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
     if (EXE_INSTALL)
