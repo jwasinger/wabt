@@ -101,7 +101,7 @@ else ()
 
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -Wold-style-cast -O3 -fno-pie -v")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -Wold-style-cast -O3 -fno-pie -fPIC -v")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -stdlib=libc++ -Wold-style-cast -O3 -fno-PIE -v")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=c++14 -std=c++17 -stdlib=libstdc++ -Wold-style-cast -O3 -fno-PIE -v")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wold-style-cast -O3 -flto")
 
   if (WERROR)
